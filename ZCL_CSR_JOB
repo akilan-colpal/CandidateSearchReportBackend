@@ -1,0 +1,135 @@
+CLASS zcl_csr_job DEFINITION
+
+    PUBLIC
+    FINAL
+    CREATE PUBLIC .
+    PUBLIC SECTION.
+
+    INTERFACES if_apj_rt_run.
+
+    TYPES: tt_range_rptid TYPE RANGE OF string.
+
+    DATA: s_userid TYPE zcl_employeedata=>tt_range_user_id,
+            s_area TYPE zcl_employeedata=>tt_range_pers_area,
+            s_country TYPE zcl_employeedata=>tt_range_country,
+            s_position TYPE zcl_employeedata=>tt_range_position,
+            s_status TYPE zcl_employeedata=>tt_range_emp_status,
+            s_division TYPE zcl_employeedata=>tt_range_division,
+            s_func TYPE zcl_employeedata=>tt_range_function,
+            s_dept TYPE zcl_employeedata=>tt_range_department,
+            s_subfunc TYPE zcl_employeedata=>tt_range_subfunction,
+            s_grade TYPE zcl_employeedata=>tt_range_pay_grade,
+            s_empgroup TYPE zcl_employeedata=>tt_range_emp_group,
+            s_reporg TYPE zcl_employeedata=>tt_range_rep_org,
+            s_category TYPE zcl_employeedata=>tt_range_category,
+            s_salaried TYPE zcl_employeedata=>tt_range_is_salaried,
+            s_newHire TYPE zcl_employeedata=>tt_range_new_hire,
+            s_potential TYPE zcl_employeedata=>tt_range_potential,
+            s_gender TYPE zcl_employeedata=>tt_range_gender,
+            s_rptid TYPE tt_range_rptid.
+
+    PROTECTED SECTION.
+    PRIVATE SECTION.
+ENDCLASS.
+
+
+
+CLASS ZCL_CSR_JOB IMPLEMENTATION.
+
+
+    METHOD if_apj_rt_run~execute.
+        TRY.
+            FINAL(lo_log) = cl_bali_log=>create_with_header(
+            cl_bali_header_setter=>create( object = 'ZHR_CSR_LOG'
+            subobject = '' ) ).
+            CATCH cx_bali_runtime INTO DATA(lx_log_err).
+                RAISE EXCEPTION NEW cx_apj_rt_content( previous = lx_log_err ).
+        ENDTRY.
+        TRY.
+            cl_apj_rt_api=>get_job_runtime_info( IMPORTING
+                ev_jobname = FINAL(jobname)
+                ev_jobcount = FINAL(jobcount)
+                ev_catalog_name = FINAL(catalog)
+                ev_template_name = FINAL(template) ).
+            CATCH cx_apj_rt ##NO_HANDLER.
+        ENDTRY.
+
+    DATA(lv_report_id) = VALUE string( ).
+        IF s_rptid IS NOT INITIAL.
+            lv_report_id = s_rptid[ 1 ]-low.
+        ENDIF.
+
+        IF lv_report_id IS NOT INITIAL.
+            DATA(ls_runlog) = VALUE zhrt_csr_runlog(
+                reportid  = lv_report_id
+                jobcount  = CONV ZCSR_E_JOBCOUNT( jobcount )
+                status    = 'Scheduled'
+                createdby = sy-uname
+                createdon = cl_abap_context_info=>get_system_date( )
+                createdat = cl_abap_context_info=>get_system_time( )
+                filename  = ''
+            ).
+
+            MODIFY zhrt_csr_runlog FROM @ls_runlog.
+            COMMIT WORK.
+        ENDIF.
+
+        TRY.
+        DATA(lo_extract) = NEW zcl_csr_extract(
+                iv_jobcount = jobcount
+                io_log = lo_log
+                it_range_user_id = s_userid
+                it_range_pers_area = s_area
+                it_range_country = s_country
+                it_range_position = s_position
+                it_range_emp_status = s_status
+                it_range_division = s_division
+                it_range_function = s_func
+                it_range_department = s_dept
+                it_range_subfunction = s_subfunc
+                it_range_pay_grade = s_grade
+                it_range_emp_group = s_empgroup
+                it_range_rep_org = s_reporg
+                it_range_category = s_category
+                it_range_is_salaried = s_salaried
+                it_range_gender = s_gender
+                it_range_potential = s_potential
+                it_range_new_hire  = s_newHire
+          ).
+
+        lo_extract->run( ).
+
+        IF lo_extract->mt_flat_data IS NOT INITIAL.
+             DATA(lv_count) = lines( lo_extract->mt_flat_data ).
+            IF lo_log IS BOUND.
+                lo_log->add_item( cl_bali_free_text_setter=>create( severity = 'S' text = |Success. Total Records: { lv_count }| ) ).
+            ENDIF.
+
+        ELSE.
+            IF lo_log IS BOUND.
+                lo_log->add_item( cl_bali_free_text_setter=>create( severity = 'W' text = 'No data found matching criteria.' ) ).
+            ENDIF.
+        ENDIF.
+
+        CATCH cx_bali_runtime ##NO_HANDLER.
+        CATCH cx_root INTO DATA(lo_err).
+        TRY.
+            IF lo_log IS BOUND.
+                lo_log->add_item( cl_bali_free_text_setter=>create( severity = 'E' text = |ERROR: { lo_err->get_text( ) }| ) ).
+                cl_bali_log_db=>get_instance( )->save_log( log = lo_log assign_to_current_appl_job = abap_true ).
+            ENDIF.
+            CATCH cx_bali_runtime ##NO_HANDLER.
+        ENDTRY.
+        RAISE EXCEPTION NEW cx_apj_rt_content( previous = lo_err ).
+
+        ENDTRY.
+
+        TRY.
+            IF lo_log IS BOUND.
+                cl_bali_log_db=>get_instance( )->save_log( log = lo_log assign_to_current_appl_job = abap_true ).
+            ENDIF.
+            CATCH cx_bali_runtime ##NO_HANDLER.
+        ENDTRY.
+        COMMIT WORK.
+    ENDMETHOD.
+ENDCLASS.
