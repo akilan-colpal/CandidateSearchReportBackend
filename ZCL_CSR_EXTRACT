@@ -1,0 +1,1164 @@
+CLASS zcl_csr_extract DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    DATA mt_flat_data TYPE TABLE OF zcl_employeedata=>ty_flat_employee.
+    TYPES: tt_range_user_id     TYPE zcl_employeedata=>tt_range_user_id.
+    TYPES: tt_range_pers_area   TYPE zcl_employeedata=>tt_range_pers_area.
+    TYPES: tt_range_country     TYPE zcl_employeedata=>tt_range_country.
+    TYPES: tt_range_new_hire    TYPE zcl_employeedata=>tt_range_new_hire.
+    TYPES: tt_range_position    TYPE zcl_employeedata=>tt_range_position.
+    TYPES: tt_range_emp_status  TYPE zcl_employeedata=>tt_range_emp_status.
+    TYPES: tt_range_division    TYPE zcl_employeedata=>tt_range_division.
+    TYPES: tt_range_function    TYPE zcl_employeedata=>tt_range_function.
+    TYPES: tt_range_subfunction TYPE zcl_employeedata=>tt_range_subfunction.
+    TYPES: tt_range_pay_grade   TYPE zcl_employeedata=>tt_range_pay_grade.
+    TYPES: tt_range_emp_group   TYPE zcl_employeedata=>tt_range_emp_group.
+    TYPES: tt_range_rep_org     TYPE zcl_employeedata=>tt_range_rep_org.
+    TYPES: tt_range_category    TYPE zcl_employeedata=>tt_range_category.
+    TYPES: tt_range_is_salaried TYPE zcl_employeedata=>tt_range_is_salaried.
+    TYPES: tt_range_department TYPE zcl_employeedata=>tt_range_department.
+
+    TYPES: tt_range_gender      TYPE zcl_employeedata=>tt_range_gender.
+    TYPES: tt_range_potential TYPE zcl_employeedata=>tt_range_potential.
+
+    METHODS constructor
+      IMPORTING
+        iv_jobcount          TYPE ZCSR_E_JOBCOUNT
+        io_log               TYPE REF TO if_bali_log OPTIONAL
+        it_range_user_id     TYPE tt_range_user_id OPTIONAL
+        it_range_pers_area   TYPE tt_range_pers_area OPTIONAL
+        it_range_new_hire    TYPE tt_range_new_hire OPTIONAL
+        it_range_country     TYPE tt_range_country OPTIONAL
+        it_range_position    TYPE tt_range_position OPTIONAL
+        it_range_emp_status  TYPE tt_range_emp_status OPTIONAL
+        it_range_division    TYPE tt_range_division OPTIONAL
+        it_range_function    TYPE tt_range_function OPTIONAL
+        it_range_subfunction TYPE tt_range_subfunction OPTIONAL
+        it_range_pay_grade   TYPE tt_range_pay_grade OPTIONAL
+        it_range_emp_group   TYPE tt_range_emp_group OPTIONAL
+        it_range_rep_org     TYPE tt_range_rep_org OPTIONAL
+        it_range_category    TYPE tt_range_category OPTIONAL
+        it_range_department  TYPE tt_range_department OPTIONAL
+        it_range_is_salaried TYPE tt_range_is_salaried OPTIONAL
+        it_range_potential   TYPE tt_range_potential OPTIONAL
+        it_range_gender      TYPE tt_range_gender OPTIONAL.
+
+
+    METHODS run
+      RAISING cx_static_check.
+    METHODS send_email
+      RAISING
+        cx_bcs_mail
+        cx_bali_runtime.
+
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+
+    DATA mo_log            TYPE REF TO if_bali_log.
+    DATA mv_dms_filename   TYPE string.
+    DATA mv_jobcount       TYPE ZCSR_E_JOBCOUNT.
+    DATA mo_employee_data  TYPE REF TO zcl_employeedata.
+    DATA mo_client_proxy   TYPE REF TO /iwbep/if_cp_client_proxy.
+    DATA ls_userdtls TYPE I_BusinessUserVH.
+
+    DATA mt_range_new_hire TYPE tt_range_new_hire.
+    DATA mt_range_user_id     TYPE tt_range_user_id.
+    DATA mt_range_pers_area   TYPE tt_range_pers_area.
+    DATA mt_range_country     TYPE tt_range_country.
+    DATA mt_range_position    TYPE tt_range_position.
+    DATA mt_range_emp_status  TYPE tt_range_emp_status.
+    DATA mt_range_division    TYPE tt_range_division.
+    DATA mt_range_function    TYPE tt_range_function.
+    DATA mt_range_department  TYPE tt_range_department.
+    DATA mt_range_subfunction TYPE tt_range_subfunction.
+    DATA mt_range_pay_grade   TYPE tt_range_pay_grade.
+    DATA mt_range_emp_group   TYPE tt_range_emp_group.
+    DATA mt_range_rep_org     TYPE tt_range_rep_org.
+    DATA mt_range_category    TYPE tt_range_category.
+    DATA mt_range_is_salaried TYPE tt_range_is_salaried.
+    DATA mt_range_gender      TYPE tt_range_gender.
+    DATA mt_range_potential   TYPE tt_range_potential.
+    " Database Tables
+    DATA ls_csr_runlog     TYPE zhrt_csr_runlog.
+    METHODS apply_rbp
+      IMPORTING
+        it_user_ids         TYPE tt_range_user_id
+      EXPORTING
+        et_allowed_user_ids TYPE tt_range_user_id
+      RAISING cx_static_check.
+    " Methods
+    METHODS create_file RAISING cx_static_check.
+    METHODS format_csv_date
+      IMPORTING iv_date TYPE any
+      RETURNING VALUE(rv_date) TYPE string.
+    METHODS write_file_to_dms IMPORTING iv_data TYPE xstring RAISING cx_static_check.
+
+ENDCLASS.
+
+
+
+CLASS ZCL_CSR_EXTRACT IMPLEMENTATION.
+
+
+  METHOD constructor.
+    mv_jobcount          = iv_jobcount.
+    mo_log               = io_log.
+    mt_range_user_id     = it_range_user_id.
+    mt_range_pers_area   = it_range_pers_area.
+    mt_range_country     = it_range_country.
+    mt_range_position    = it_range_position.
+    mt_range_emp_status  = it_range_emp_status.
+    mt_range_division    = it_range_division.
+    mt_range_function    = it_range_function.
+    mt_range_subfunction = it_range_subfunction.
+    mt_range_pay_grade   = it_range_pay_grade.
+    mt_range_emp_group   = it_range_emp_group.
+    mt_range_rep_org     = it_range_rep_org.
+    mt_range_category    = it_range_category.
+    mt_range_is_salaried = it_range_is_salaried.
+    mt_range_department  = it_range_department.
+    mt_range_new_hire = it_range_new_hire.
+    mt_range_gender      = it_range_gender.
+    mt_range_potential   = it_range_potential.
+    mo_employee_data = NEW zcl_employeedata( ).
+  ENDMETHOD.
+
+
+METHOD run.
+    SELECT SINGLE * FROM zhrt_csr_runlog WHERE jobcount = @mv_jobcount INTO @ls_csr_runlog.
+    SELECT SINGLE * FROM I_BusinessUserVH WHERE UserID = @sy-uname INTO @ls_userdtls.
+
+            mv_dms_filename = |{ sy-uname }_{ xco_cp=>sy->moment( )->as( xco_cp_time=>format->iso_8601_extended )->value }.csv|.
+
+    IF mo_log IS BOUND.
+      mo_log->add_item( cl_bali_free_text_setter=>create(
+        severity = 'I'
+        text = CONV #( |Job started. Report { ls_csr_runlog-reportid }, Job { mv_jobcount }.| ) ) ).
+      cl_bali_log_db=>get_instance( )->save_log( log = mo_log assign_to_current_appl_job = abap_true ).
+    ENDIF.
+
+    TRY.
+        DATA lo_proxy_mgr TYPE REF TO zcl_csr_odata_proxy.
+        lo_proxy_mgr = NEW #( ).
+        mo_client_proxy = lo_proxy_mgr->get_odatav2_client_proxy( ).
+        mo_employee_data->get_picklist( io_client_proxy = mo_client_proxy ).
+        mo_employee_data->get_reporting_org(
+                    EXPORTING io_client_proxy  = mo_client_proxy
+                    IMPORTING et_reporting_org = mo_employee_data->mt_cust_translate_details
+                ).
+        LOOP AT mt_range_pers_area ASSIGNING FIELD-SYMBOL(<ls_area>).
+          IF <ls_area>-low CS '*'. <ls_area>-option = 'CP'. ENDIF.
+        ENDLOOP.
+    " 1. Employment Status
+        IF mt_range_emp_status IS NOT INITIAL.
+           LOOP AT mt_range_emp_status ASSIGNING FIELD-SYMBOL(<ls_stat>).
+              DATA(lv_stat_val) = <ls_stat>-low.
+              DATA(lv_found_stat_id) = VALUE string( ).
+
+              READ TABLE mo_employee_data->mt_picklist INTO DATA(ls_stat_row)
+                   WITH KEY pick_list_v_2_id = 'employee-status'
+                            external_code    = lv_stat_val.
+              IF sy-subrc = 0.
+                  lv_found_stat_id = ls_stat_row-option_id.
+                  <ls_stat>-low = lv_found_stat_id.
+              ENDIF.
+           ENDLOOP.
+        ENDIF.
+
+        " 2. Country
+        IF mt_range_country IS NOT INITIAL.
+           LOOP AT mt_range_country ASSIGNING FIELD-SYMBOL(<ls_cnt>).
+              DATA(lv_cnt_val) = <ls_cnt>-low.
+              DATA(lv_found_cnt_id) = VALUE string( ).
+
+              READ TABLE mo_employee_data->mt_picklist INTO DATA(ls_cnt_row)
+                   WITH KEY pick_list_v_2_id = 'ISOCountryList'
+                            external_code    = lv_cnt_val.
+              IF sy-subrc = 0.
+                  lv_found_cnt_id = ls_cnt_row-option_id.
+                  <ls_cnt>-low = lv_found_cnt_id.
+              ENDIF.
+           ENDLOOP.
+        ENDIF.
+
+        " 3. Employee Group
+        IF mt_range_emp_group IS NOT INITIAL.
+           LOOP AT mt_range_emp_group ASSIGNING FIELD-SYMBOL(<ls_grp>).
+              DATA(lv_grp_val) = <ls_grp>-low.
+              DATA(lv_found_grp_id) = VALUE string( ).
+
+              READ TABLE mo_employee_data->mt_picklist INTO DATA(ls_grp_row)
+                   WITH KEY pick_list_v_2_id = 'EmployeeClass'
+                            external_code    = lv_grp_val.
+              IF sy-subrc = 0.
+                  lv_found_grp_id = ls_grp_row-option_id.
+                  <ls_grp>-low = lv_found_grp_id.
+              ENDIF.
+           ENDLOOP.
+        ENDIF.
+
+        " 4. Category
+        IF mt_range_category IS NOT INITIAL.
+           LOOP AT mt_range_category ASSIGNING FIELD-SYMBOL(<ls_cat>).
+              DATA(lv_cat_val) = <ls_cat>-low.
+              DATA(lv_found_cat_id) = VALUE string( ).
+
+              READ TABLE mo_employee_data->mt_picklist INTO DATA(ls_cat_row)
+                   WITH KEY pick_list_v_2_id = 'CP_Category'
+                            external_code    = lv_cat_val.
+              IF sy-subrc = 0.
+                  lv_found_cat_id = ls_cat_row-option_id.
+                  <ls_cat>-low = lv_found_cat_id.
+              ENDIF.
+           ENDLOOP.
+        ENDIF.
+
+        " Is Salaried
+    LOOP AT mt_range_is_salaried ASSIGNING FIELD-SYMBOL(<ls_sal>).
+          DATA(lv_sal_val) = <ls_sal>-low.
+
+          TRANSLATE lv_sal_val TO LOWER CASE.
+          DATA(lv_first_char) = lv_sal_val(1).
+          TRANSLATE lv_first_char TO UPPER CASE.
+          lv_sal_val(1) = lv_first_char.
+
+          DATA(lv_found_sal_id) = VALUE string( ).
+
+          READ TABLE mo_employee_data->mt_picklist INTO DATA(ls_sal_row)
+               WITH KEY pick_list_v_2_id = 'yesNo'
+                        external_code    = lv_sal_val.
+
+          IF sy-subrc = 0.
+              lv_found_sal_id = ls_sal_row-option_id.
+              <ls_sal>-low = lv_found_sal_id.
+          ENDIF.
+       ENDLOOP.
+
+       IF mt_range_rep_org IS NOT INITIAL.
+           LOOP AT mt_range_rep_org ASSIGNING FIELD-SYMBOL(<ls_reporg>).
+              DATA(lv_reporg_val) = <ls_reporg>-low.
+              DATA(lv_found_reporg_id) = VALUE string( ).
+
+              READ TABLE mo_employee_data->mt_cust_translate_details INTO DATA(ls_reporg_row)
+                   WITH KEY secondary_identifier = 'REPORTING_ORG'
+                            cust_parameter_1      = lv_reporg_val.
+
+              IF sy-subrc = 0.
+                  lv_found_reporg_id = ls_reporg_row-cust_output.
+                  <ls_reporg>-low = lv_found_reporg_id.
+              ENDIF.
+           ENDLOOP.
+        ENDIF.
+
+        " =====================================================================
+       " filters in the job log
+        " =====================================================================
+    IF mo_log IS BOUND.
+           DATA(lv_filter_log) = |FILTERS ACTIVE:| .
+
+           " 1. User ID (Global Colgate ID)
+           IF mt_range_user_id IS NOT INITIAL.
+              LOOP AT mt_range_user_id INTO DATA(ls_dbg_uid).
+                 lv_filter_log = |{ lv_filter_log } [UserID={ ls_dbg_uid-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 2. Employment Status
+           IF mt_range_emp_status IS NOT INITIAL.
+              LOOP AT mt_range_emp_status INTO DATA(ls_dbg_stat).
+                 lv_filter_log = |{ lv_filter_log } [Status={ ls_dbg_stat-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 3. Country
+           IF mt_range_country IS NOT INITIAL.
+              LOOP AT mt_range_country INTO DATA(ls_dbg_cnt).
+                 lv_filter_log = |{ lv_filter_log } [Country={ ls_dbg_cnt-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 4. Personnel Area
+           IF mt_range_pers_area IS NOT INITIAL.
+              LOOP AT mt_range_pers_area INTO DATA(ls_dbg_area).
+                 lv_filter_log = |{ lv_filter_log } [Area={ ls_dbg_area-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 5. Position Code
+           IF mt_range_position IS NOT INITIAL.
+              LOOP AT mt_range_position INTO DATA(ls_dbg_pos).
+                 lv_filter_log = |{ lv_filter_log } [Position={ ls_dbg_pos-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 6. Division
+           IF mt_range_division IS NOT INITIAL.
+              LOOP AT mt_range_division INTO DATA(ls_dbg_div).
+                 lv_filter_log = |{ lv_filter_log } [Division={ ls_dbg_div-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 7. Department
+           IF mt_range_department IS NOT INITIAL.
+              LOOP AT mt_range_department INTO DATA(ls_dbg_dept).
+                 lv_filter_log = |{ lv_filter_log } [Dept={ ls_dbg_dept-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 8. Function
+           IF mt_range_function IS NOT INITIAL.
+              LOOP AT mt_range_function INTO DATA(ls_dbg_func).
+                 lv_filter_log = |{ lv_filter_log } [Function={ ls_dbg_func-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 9. Sub-Function
+           IF mt_range_subfunction IS NOT INITIAL.
+              LOOP AT mt_range_subfunction INTO DATA(ls_dbg_subfunc).
+                 lv_filter_log = |{ lv_filter_log } [SubFunc={ ls_dbg_subfunc-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 10. (Personal Salary Grade)
+           IF mt_range_pay_grade IS NOT INITIAL.
+              LOOP AT mt_range_pay_grade INTO DATA(ls_dbg_grade).
+                 lv_filter_log = |{ lv_filter_log } [Grade={ ls_dbg_grade-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 11. Employee Group
+           IF mt_range_emp_group IS NOT INITIAL.
+              LOOP AT mt_range_emp_group INTO DATA(ls_dbg_grp).
+                 lv_filter_log = |{ lv_filter_log } [EmpGrp={ ls_dbg_grp-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 12. Reporting Org
+           IF mt_range_rep_org IS NOT INITIAL.
+              LOOP AT mt_range_rep_org INTO DATA(ls_dbg_reporg).
+                 lv_filter_log = |{ lv_filter_log } [RepOrg={ ls_dbg_reporg-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 13. Category
+           IF mt_range_category IS NOT INITIAL.
+              LOOP AT mt_range_category INTO DATA(ls_dbg_cat).
+                 lv_filter_log = |{ lv_filter_log } [Category={ ls_dbg_cat-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 14. Is Salaried
+           IF mt_range_is_salaried IS NOT INITIAL.
+              LOOP AT mt_range_is_salaried INTO DATA(ls_dbg_sal).
+                 lv_filter_log = |{ lv_filter_log } [Salaried={ ls_dbg_sal-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 15. Gender
+           IF mt_range_gender IS NOT INITIAL.
+              LOOP AT mt_range_gender INTO DATA(ls_dbg_gen).
+                 lv_filter_log = |{ lv_filter_log } [Gender={ ls_dbg_gen-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 16. Potential Rating
+           IF mt_range_potential IS NOT INITIAL.
+              LOOP AT mt_range_potential INTO DATA(ls_dbg_pot).
+                 lv_filter_log = |{ lv_filter_log } [Potential={ ls_dbg_pot-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           " 17. New Hire
+        IF mt_range_new_hire IS NOT INITIAL.
+              LOOP AT mt_range_new_hire INTO DATA(ls_dbg_new).
+                 lv_filter_log = |{ lv_filter_log } [New Hire={ ls_dbg_new-low }]|.
+              ENDLOOP.
+           ENDIF.
+
+           mo_log->add_item( cl_bali_free_text_setter=>create( severity = 'I' text = CONV #( lv_filter_log ) ) ).
+           cl_bali_log_db=>get_instance( )->save_log( log = mo_log assign_to_current_appl_job = abap_true ).
+        ENDIF.
+
+DATA lt_nested_result TYPE zcl_employeedata=>t_employee_data_table.
+
+        IF mt_range_user_id IS NOT INITIAL.
+            " If the user explicitly passed specific IDs, fetch them in batches
+            CONSTANTS lc_emp_batch_size TYPE i VALUE 160.
+            DATA lt_main_batch_ids      TYPE zcl_employeedata=>tt_range_user_id.
+            DATA lt_main_batch_result   TYPE zcl_employeedata=>t_employee_data_table.
+            DATA(lv_total_ids) = lines( mt_range_user_id ).
+            DATA(lv_start_idx) = 1.
+
+            WHILE lv_start_idx <= lv_total_ids.
+                DATA(lv_end_idx) = lv_start_idx + lc_emp_batch_size - 1.
+                IF lv_end_idx > lv_total_ids. lv_end_idx = lv_total_ids. ENDIF.
+
+                CLEAR lt_main_batch_ids.
+                APPEND LINES OF mt_range_user_id FROM lv_start_idx TO lv_end_idx TO lt_main_batch_ids.
+
+                TRY.
+                    mo_employee_data->get_employee_data(
+                      EXPORTING
+                        io_client_proxy      = mo_client_proxy
+                        it_range_user_id     = lt_main_batch_ids
+                        it_range_pers_area   = mt_range_pers_area
+                        it_range_country     = mt_range_country
+                        it_range_position    = mt_range_position
+                        it_range_rep_org     = mt_range_rep_org
+                        it_range_emp_status  = mt_range_emp_status
+                        it_range_division    = mt_range_division
+                        it_range_department  = mt_range_department
+                        it_range_function    = mt_range_function
+                        it_range_subfunction = mt_range_subfunction
+                        it_range_pay_grade   = mt_range_pay_grade
+                        it_range_emp_group   = mt_range_emp_group
+                        it_range_category    = mt_range_category
+                        it_range_is_salaried = mt_range_is_salaried
+                        iv_top               = 0
+                        iv_skip              = 0
+                      IMPORTING
+                        et_employee_data     = lt_main_batch_result
+                    ).
+                    APPEND LINES OF lt_main_batch_result TO lt_nested_result.
+                CATCH cx_root ##NO_HANDLER.
+                ENDTRY.
+                lv_start_idx = lv_end_idx + 1.
+            ENDWHILE.
+
+        ELSE.
+            DATA(lv_broad_skip) = 0.
+            DATA(lv_broad_top)  = 1000.
+            DATA lt_page_result TYPE zcl_employeedata=>t_employee_data_table.
+
+            DO.
+                CLEAR lt_page_result.
+                TRY.
+                    mo_employee_data->get_employee_data(
+                      EXPORTING
+                        io_client_proxy      = mo_client_proxy
+                        it_range_pers_area   = mt_range_pers_area
+                        it_range_country     = mt_range_country
+                        it_range_position    = mt_range_position
+                        it_range_rep_org     = mt_range_rep_org
+                        it_range_emp_status  = mt_range_emp_status
+                        it_range_division    = mt_range_division
+                        it_range_department  = mt_range_department
+                        it_range_function    = mt_range_function
+                        it_range_subfunction = mt_range_subfunction
+                        it_range_pay_grade   = mt_range_pay_grade
+                        it_range_emp_group   = mt_range_emp_group
+                        it_range_category    = mt_range_category
+                        it_range_is_salaried = mt_range_is_salaried
+                        iv_top               = lv_broad_top
+                        iv_skip              = lv_broad_skip
+                      IMPORTING
+                        et_employee_data     = lt_page_result
+                    ).
+
+                    APPEND LINES OF lt_page_result TO lt_nested_result.
+                    IF lines( lt_page_result ) < lv_broad_top.
+                        EXIT.
+                    ENDIF.
+                    lv_broad_skip = lv_broad_skip + lv_broad_top.
+                CATCH cx_root.
+                     EXIT.
+                ENDTRY.
+            ENDDO.
+        ENDIF.
+
+        IF mo_log IS BOUND.
+          mo_log->add_item( cl_bali_free_text_setter=>create(
+            severity = 'I'
+            text = CONV #( |Records fetched from SuccessFactors: { lines( lt_nested_result ) }.| ) ) ).
+          cl_bali_log_db=>get_instance( )->save_log( log = mo_log assign_to_current_appl_job = abap_true ).
+        ENDIF.
+
+        IF lt_nested_result IS INITIAL.
+          ls_csr_runlog-filename = 'No Data'.
+          ls_csr_runlog-status   = 'No Data'.
+          MODIFY zhrt_csr_runlog FROM @ls_csr_runlog.
+          IF mo_log IS BOUND.
+
+            mo_log->add_item( cl_bali_free_text_setter=>create(
+              severity = 'I'
+              text = CONV #( |Job finished. Status { ls_csr_runlog-status }.| ) ) ).
+            cl_bali_log_db=>get_instance( )->save_log( log = mo_log assign_to_current_appl_job = abap_true ).
+          ENDIF.
+          RETURN.
+        ENDIF.
+
+        " =====================================================================
+        " STEP 2: GENDER & POTENTIAL INTERSECTION
+        " =====================================================================
+
+        " Process Gender Filter
+        IF mt_range_gender IS NOT INITIAL.
+           DATA(lt_gender_ids) = VALUE zcl_employeedata=>tt_range_user_id( ).
+
+           mo_employee_data->get_users_by_gender(
+             EXPORTING io_client_proxy = mo_client_proxy it_range_gender = mt_range_gender
+             IMPORTING et_user_ids     = lt_gender_ids ).
+
+           SORT lt_gender_ids BY low.
+
+           LOOP AT lt_nested_result ASSIGNING FIELD-SYMBOL(<fs_gen_check>).
+              READ TABLE lt_gender_ids TRANSPORTING NO FIELDS
+                   WITH KEY low = <fs_gen_check>-user_id BINARY SEARCH.
+              IF sy-subrc <> 0.
+                 DELETE lt_nested_result.
+              ENDIF.
+           ENDLOOP.
+        ENDIF.
+
+        " Process Potential Filter
+        IF mt_range_potential IS NOT INITIAL AND lt_nested_result IS NOT INITIAL.
+           DATA(lt_potential_ids) = VALUE zcl_employeedata=>tt_range_user_id( ).
+
+           mo_employee_data->get_users_by_potential(
+             EXPORTING io_client_proxy = mo_client_proxy it_range_potential = mt_range_potential
+             IMPORTING et_user_ids     = lt_potential_ids ).
+
+           SORT lt_potential_ids BY low.
+
+           LOOP AT lt_nested_result ASSIGNING FIELD-SYMBOL(<fs_pot_check>).
+              READ TABLE lt_potential_ids TRANSPORTING NO FIELDS
+                   WITH KEY low = <fs_pot_check>-user_id BINARY SEARCH.
+              IF sy-subrc <> 0.
+                 DELETE lt_nested_result.
+              ENDIF.
+           ENDLOOP.
+        ENDIF.
+
+        IF lt_nested_result IS INITIAL.
+          ls_csr_runlog-filename = 'No Data'.
+          ls_csr_runlog-status   = 'No Data'.
+          MODIFY zhrt_csr_runlog FROM @ls_csr_runlog.
+          IF mo_log IS BOUND.
+            mo_log->add_item( cl_bali_free_text_setter=>create(
+              severity = 'I'
+              text = CONV #( |Total records in report: 0.| ) ) ).
+            mo_log->add_item( cl_bali_free_text_setter=>create(
+              severity = 'I'
+              text = CONV #( |Job finished. Status { ls_csr_runlog-status }.| ) ) ).
+            cl_bali_log_db=>get_instance( )->save_log( log = mo_log assign_to_current_appl_job = abap_true ).
+          ENDIF.
+          RETURN.
+        ENDIF.
+
+        " Same new-hire rule as the mapping loop, applied before RBP and background reads.
+        IF mt_range_new_hire IS NOT INITIAL.
+          LOOP AT lt_nested_result ASSIGNING FIELD-SYMBOL(<fs_hire_check>).
+            DATA(lv_hire_flag) = CONV string( 'NO' ).
+            DATA(lv_hire_start) = VALUE #( <fs_hire_check>-employment_nav[ 1 ]-start_date OPTIONAL ).
+            IF lv_hire_start IS NOT INITIAL AND lv_hire_start <= sy-datum.
+              DATA(lv_hire_days) = sy-datum - lv_hire_start.
+              IF lv_hire_days <= 183.
+                lv_hire_flag = 'YES'.
+              ENDIF.
+            ENDIF.
+
+            IF line_exists( mt_range_new_hire[ low = 'ALL' ] ).
+
+            ELSEIF line_exists( mt_range_new_hire[ low = 'YES' ] ).
+              IF lv_hire_flag = 'NO'.
+                DELETE lt_nested_result.
+              ENDIF.
+            ELSEIF line_exists( mt_range_new_hire[ low = 'NO' ] ).
+              IF lv_hire_flag = 'YES'.
+                DELETE lt_nested_result.
+              ENDIF.
+            ENDIF.
+          ENDLOOP.
+        ENDIF.
+
+        " =====================================================================
+        " STEP 3: RBP, THEN BACKGROUND FETCH
+        " =====================================================================
+        DATA lt_all_user_ids TYPE zcl_employeedata=>tt_range_user_id.
+        lt_all_user_ids = VALUE #( FOR emp IN lt_nested_result ( sign = 'I' option = 'EQ' low = emp-user_id ) ).
+        SORT lt_all_user_ids BY low.
+        DELETE ADJACENT DUPLICATES FROM lt_all_user_ids COMPARING low.
+
+        IF lt_all_user_ids IS NOT INITIAL.
+          DATA lt_allowed_user_ids TYPE zcl_employeedata=>tt_range_user_id.
+          IF mo_log IS BOUND.
+            mo_log->add_item( cl_bali_free_text_setter=>create(
+              severity = 'I'
+              text = CONV #( |RBP check started. Candidates: { lines( lt_all_user_ids ) }.| ) ) ).
+            cl_bali_log_db=>get_instance( )->save_log( log = mo_log assign_to_current_appl_job = abap_true ).
+          ENDIF.
+          apply_rbp(
+            EXPORTING it_user_ids         = lt_all_user_ids
+            IMPORTING et_allowed_user_ids = lt_allowed_user_ids ).
+          IF mo_log IS BOUND.
+            mo_log->add_item( cl_bali_free_text_setter=>create(
+              severity = 'I'
+              text = CONV #( |RBP check completed. Allowed: { lines( lt_allowed_user_ids ) }.| ) ) ).
+            cl_bali_log_db=>get_instance( )->save_log( log = mo_log assign_to_current_appl_job = abap_true ).
+          ENDIF.
+          SORT lt_allowed_user_ids BY low.
+          LOOP AT lt_nested_result ASSIGNING FIELD-SYMBOL(<fs_rbp_check>).
+            READ TABLE lt_allowed_user_ids TRANSPORTING NO FIELDS
+                 WITH KEY low = <fs_rbp_check>-user_id BINARY SEARCH.
+            IF sy-subrc <> 0.
+              DELETE lt_nested_result.
+            ENDIF.
+          ENDLOOP.
+          lt_all_user_ids = lt_allowed_user_ids.
+        ENDIF.
+
+        DATA: lt_bulk_languages   TYPE zcl_employeedata=>tt_background_languages,
+              lt_bulk_mobility    TYPE zcl_employeedata=>tt_background_mobility,
+              lt_bulk_regions     TYPE zcl_employeedata=>tt_background_regions,
+              lt_bulk_performance TYPE zcl_employeedata=>tt_trend_performance,
+              lt_bulk_potential   TYPE zcl_employeedata=>tt_trend_potential,
+              lt_bulk_roles       TYPE zcl_employeedata=>tt_background_key_roles.
+
+        DATA: lt_chunk_languages   TYPE zcl_employeedata=>tt_background_languages,
+              lt_chunk_mobility    TYPE zcl_employeedata=>tt_background_mobility,
+              lt_chunk_regions     TYPE zcl_employeedata=>tt_background_regions,
+              lt_chunk_performance TYPE zcl_employeedata=>tt_trend_performance,
+              lt_chunk_potential   TYPE zcl_employeedata=>tt_trend_potential,
+              lt_chunk_roles       TYPE zcl_employeedata=>tt_background_key_roles.
+
+        DATA lt_bg_batch_range TYPE zcl_employeedata=>tt_range_user_id.
+
+        CONSTANTS lc_bg_batch_size TYPE i VALUE 170.
+
+        IF lt_all_user_ids IS NOT INITIAL.
+            DATA(lv_bg_total) = lines( lt_all_user_ids ).
+            DATA(lv_bg_start) = 1.
+
+            WHILE lv_bg_start <= lv_bg_total.
+                CLEAR: lt_bg_batch_range, lt_chunk_languages, lt_chunk_mobility, lt_chunk_regions, lt_chunk_performance, lt_chunk_potential, lt_chunk_roles.
+
+                DATA(lv_bg_end) = lv_bg_start + lc_bg_batch_size - 1.
+                IF lv_bg_end > lv_bg_total.
+                    lv_bg_end = lv_bg_total.
+                ENDIF.
+                APPEND LINES OF lt_all_user_ids FROM lv_bg_start TO lv_bg_end TO lt_bg_batch_range.
+
+                TRY.
+                    mo_employee_data->get_background_batch(
+                      EXPORTING
+                        io_client_proxy = mo_client_proxy
+                        it_user_range   = lt_bg_batch_range
+                      IMPORTING
+                        et_languages    = lt_chunk_languages
+                        et_mobility     = lt_chunk_mobility
+                        et_regions      = lt_chunk_regions
+                        et_performance  = lt_chunk_performance
+                        et_potential    = lt_chunk_potential
+                        et_roles        = lt_chunk_roles ).
+                    APPEND LINES OF lt_chunk_languages TO lt_bulk_languages.
+                    APPEND LINES OF lt_chunk_mobility TO lt_bulk_mobility.
+                    APPEND LINES OF lt_chunk_regions TO lt_bulk_regions.
+                    APPEND LINES OF lt_chunk_performance TO lt_bulk_performance.
+                    APPEND LINES OF lt_chunk_potential TO lt_bulk_potential.
+                    APPEND LINES OF lt_chunk_roles TO lt_bulk_roles.
+                CATCH cx_root ##NO_HANDLER.
+                ENDTRY.
+                lv_bg_start = lv_bg_end + 1.
+            ENDWHILE.
+        ENDIF.
+
+        SORT lt_bulk_languages BY user_id.
+        SORT lt_bulk_mobility BY user_id.
+        SORT lt_bulk_regions BY user_id.
+        SORT lt_bulk_performance BY user_id.
+        SORT lt_bulk_potential BY external_code.
+        SORT lt_bulk_roles BY user_id.
+
+        " MAPPING LOGIC (Nested -> Flat)
+        DATA ls_flat_employee TYPE zcl_employeedata=>ty_flat_employee.
+
+        LOOP AT lt_nested_result ASSIGNING FIELD-SYMBOL(<fs_employee>).
+          CLEAR ls_flat_employee.
+          ls_flat_employee = CORRESPONDING #( <fs_employee> MAPPING
+              globalColgateID       = user_id
+              personnelArea         = location
+              positionTitle         = custom_string_32
+              personalSalaryGrade = pay_grade
+              dateInGrade           = pay_scale_level_entry_date
+              positionCode          = position
+           ).
+
+          " Navigation Properties
+          ls_flat_employee-first_name = VALUE #( <fs_employee>-employment_nav[ 1 ]-person_nav-personal_info_nav[ 1 ]-preferred_name OPTIONAL ).
+          ls_flat_employee-last_name  = VALUE #( <fs_employee>-employment_nav[ 1 ]-person_nav-personal_info_nav[ 1 ]-custom_string_1 OPTIONAL ).
+          ls_flat_employee-nationality = VALUE #( <fs_employee>-employment_nav[ 1 ]-person_nav-personal_info_nav[ 1 ]-nationality OPTIONAL ).
+          ls_flat_employee-second_nationality = VALUE #( <fs_employee>-employment_nav[ 1 ]-person_nav-personal_info_nav[ 1 ]-second_nationality OPTIONAL ).
+          ls_flat_employee-thirdNationality = VALUE #( <fs_employee>-employment_nav[ 1 ]-person_nav-personal_info_nav[ 1 ]-third_nationality OPTIONAL ).
+          ls_flat_employee-gender = VALUE #( <fs_employee>-employment_nav[ 1 ]-person_nav-personal_info_nav[ 1 ]-gender OPTIONAL ).
+          ls_flat_employee-department = VALUE #( <fs_employee>-department_nav[ 1 ]-name OPTIONAL ).
+
+          ls_flat_employee-dateInPosition = VALUE #( <fs_employee>-user_nav[ 1 ]-date_in_position OPTIONAL ).
+          ls_flat_employee-function = VALUE #( <fs_employee>-business_unit_nav[ 1 ]-name_en_us OPTIONAL ).
+          ls_flat_employee-subfunction = VALUE #( <fs_employee>-division_nav[ 1 ]-name_en_us OPTIONAL ).
+          ls_flat_employee-personnelArea = VALUE #( <fs_employee>-location_nav[ 1 ]-name OPTIONAL ).
+
+          " Date Calcs
+          IF ls_flat_employee-dateInPosition IS NOT INITIAL.
+            ls_flat_employee-timeInPosition = mo_employee_data->calculate_duration( ls_flat_employee-dateInPosition ).
+          ENDIF.
+          ls_flat_employee-dateInGrade = <fs_employee>-pay_scale_level_entry_date.
+          IF ls_flat_employee-dateInGrade IS NOT INITIAL.
+            ls_flat_employee-timeInGrade = mo_employee_data->calculate_duration( ls_flat_employee-dateInGrade ).
+          ENDIF.
+
+          " Picklist Mappings
+         TRY.
+                  DATA(lv_reporg_ext) = mo_employee_data->mt_cust_translate_details[
+                      secondary_identifier = 'REPORTING_ORG'
+                      cust_output          = <fs_employee>-custom_string_121
+                  ]-cust_parameter_1.
+
+                  ls_flat_employee-reportingOrg = mo_employee_data->mt_picklist[
+                      pick_list_v_2_id = 'CP_Reporting_Org'
+                      external_code    = lv_reporg_ext
+                  ]-label_en_us.
+
+              CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+              ENDTRY.
+          TRY. ls_flat_employee-country = mo_employee_data->mt_picklist[ option_id = <fs_employee>-custom_string_46 pick_list_v_2_id = 'ISOCountryList' ]-external_code. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+          ls_flat_employee-country = <fs_employee>-custom_string_46. ENDTRY.
+          TRY. ls_flat_employee-employmentStatus = mo_employee_data->mt_picklist[ option_id = <fs_employee>-custom_string_25 pick_list_v_2_id = 'employee-status' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+          ls_flat_employee-employmentStatus = <fs_employee>-custom_string_25. ENDTRY.
+          TRY. ls_flat_employee-division = mo_employee_data->mt_picklist[ option_id = <fs_employee>-custom_string_8 pick_list_v_2_id = 'cust_division' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+          ls_flat_employee-division = <fs_employee>-custom_string_8. ENDTRY.
+          DATA(lv_risk_id) = VALUE #( <fs_employee>-user_nav[ 1 ]-risk_of_loss OPTIONAL ).
+          IF lv_risk_id IS NOT INITIAL. TRY. ls_flat_employee-riskOfLoss = mo_employee_data->mt_picklist[ option_id = lv_risk_id pick_list_v_2_id = 'riskOfLoss' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+          ls_flat_employee-riskOfLoss = lv_risk_id.
+ENDTRY. ENDIF.
+          TRY. ls_flat_employee-employeeGroup = mo_employee_data->mt_picklist[ option_id = <fs_employee>-employee_class pick_list_v_2_id = 'EmployeeClass' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+          ls_flat_employee-employeeGroup = <fs_employee>-employee_class. ENDTRY.
+          TRY. ls_flat_employee-category = mo_employee_data->mt_picklist[ option_id = <fs_employee>-custom_string_5 pick_list_v_2_id = 'CP_Category' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+          ls_flat_employee-category = <fs_employee>-custom_string_5
+. ENDTRY.
+          TRY. ls_flat_employee-isSalaried = mo_employee_data->mt_picklist[ option_id = <fs_employee>-custom_string_17 pick_list_v_2_id = 'yesNo' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+          ls_flat_employee-isSalaried = <fs_employee>-custom_string_17
+. ENDTRY.
+
+          " Background Mappings
+          READ TABLE lt_bulk_mobility INTO DATA(ls_mob) WITH KEY user_id = <fs_employee>-user_id BINARY SEARCH.
+          IF sy-subrc = 0.
+             TRY. ls_flat_employee-mobility_willingness = mo_employee_data->mt_picklist[ option_id = ls_mob-willingness pick_list_v_2_id = 'IDP_Willingness_to_Relocate' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+             ls_flat_employee-mobility_willingness
+= ls_mob-willingness. ENDTRY.
+             ls_flat_employee-mobility_comments = ls_mob-comments.
+             DATA(lv_year_lbl) = ls_mob-timingyear.
+             TRY. lv_year_lbl = mo_employee_data->mt_picklist[ option_id = ls_mob-timingyear pick_list_v_2_id = 'reloyears' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER. ENDTRY.
+             IF ls_mob-timingquarter IS NOT INITIAL.
+                 DATA(lv_timing_lbl) = ls_mob-timingquarter.
+                 TRY. lv_timing_lbl = mo_employee_data->mt_picklist[ option_id = ls_mob-timingquarter pick_list_v_2_id = 'IDP_Relocation_Timeline' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER. ENDTRY.
+               ls_flat_employee-mobility_timing = |{ lv_timing_lbl }, { lv_year_lbl }|.
+             ELSE.
+                  ls_flat_employee-mobility_timing = lv_year_lbl.
+             ENDIF.
+          ENDIF.
+
+          READ TABLE lt_bulk_regions INTO DATA(ls_reg) WITH KEY user_id = <fs_employee>-user_id BINARY SEARCH.
+          IF sy-subrc = 0. ls_flat_employee-mobility_regions = ls_reg-region_list. ENDIF.
+
+          READ TABLE lt_bulk_performance INTO DATA(ls_perf) WITH KEY user_id = <fs_employee>-user_id BINARY SEARCH.
+          IF sy-subrc = 0. ls_flat_employee-performance_rating = ls_perf-ratings. IF ls_perf-startdate IS NOT INITIAL. ls_flat_employee-performance_year = ls_perf-startdate(4). ENDIF. ENDIF.
+
+          READ TABLE lt_bulk_potential INTO DATA(ls_pot) WITH KEY external_code = <fs_employee>-user_id BINARY SEARCH.
+          IF sy-subrc = 0. TRY. ls_flat_employee-potential_rating = mo_employee_data->mt_picklist[ external_code = ls_pot-cust_potential_rating pick_list_v_2_id = 'potRating' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+           ls_flat_employee-potential_rating = ls_pot-cust_potential_rating.
+          ENDTRY. ENDIF.
+
+          DATA(lv_role_idx) = 0.
+          LOOP AT lt_bulk_roles INTO DATA(ls_role) WHERE user_id = <fs_employee>-user_id.
+             lv_role_idx += 1.
+             DATA(lv_role_title) = ls_role-title.
+             IF ls_role-title CO '0123456789 '.
+               TRY.
+                   lv_role_title = mo_employee_data->mt_picklist[ option_id = ls_role-title pick_list_v_2_id = 'NextRoles' ]-label_en_us.
+                 CATCH cx_sy_itab_line_not_found cx_sy_conversion_no_number ##NO_HANDLER.
+               ENDTRY.
+             ENDIF.
+             CASE lv_role_idx. WHEN 1. ls_flat_employee-key_role_1 = lv_role_title. WHEN 2. ls_flat_employee-key_role_2 = lv_role_title. WHEN 3. ls_flat_employee-key_role_3 = lv_role_title. ENDCASE.
+             IF lv_role_idx >= 3. EXIT. ENDIF.
+          ENDLOOP.
+
+          DATA(lv_lang_idx) = 0.
+          LOOP AT lt_bulk_languages INTO DATA(ls_lang) WHERE user_id = <fs_employee>-user_id.
+             lv_lang_idx += 1.
+             DATA(lv_lang_lbl) = ls_lang-language.
+             TRY. lv_lang_lbl = mo_employee_data->mt_picklist[ option_id = ls_lang-language pick_list_v_2_id = 'language' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER. ENDTRY.
+             DATA(lv_fluency_lbl) = ls_lang-fluency.
+             TRY. lv_fluency_lbl = mo_employee_data->mt_picklist[ option_id = ls_lang-fluency pick_list_v_2_id = 'fluency~%1' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER. ENDTRY.
+             CASE lv_lang_idx.
+               WHEN 1. ls_flat_employee-language_1 = lv_lang_lbl. ls_flat_employee-fluency_1 = lv_fluency_lbl.
+               WHEN 2. ls_flat_employee-language_2 = lv_lang_lbl. ls_flat_employee-fluency_2 = lv_fluency_lbl.
+               WHEN 3. ls_flat_employee-language_3 = lv_lang_lbl. ls_flat_employee-fluency_3 = lv_fluency_lbl.
+               WHEN 4. ls_flat_employee-language_4 = lv_lang_lbl. ls_flat_employee-fluency_4 = lv_fluency_lbl.
+               WHEN 5. ls_flat_employee-language_5 = lv_lang_lbl. ls_flat_employee-fluency_5 = lv_fluency_lbl.
+             ENDCASE.
+             IF lv_lang_idx >= 5. EXIT. ENDIF.
+          ENDLOOP.
+
+           DATA(lv_is_new_hire) = CONV string( 'NO' ).
+           DATA(lv_start_date) = VALUE #( <fs_employee>-employment_nav[ 1 ]-start_date OPTIONAL ).
+          IF lv_start_date IS NOT INITIAL AND lv_start_date <= sy-datum.
+              DATA(lv_days_since_hire) = sy-datum - lv_start_date.
+              IF lv_days_since_hire <= 183.
+                  lv_is_new_hire = 'YES'.
+              ENDIF.
+          ENDIF.
+
+          IF mt_range_new_hire IS NOT INITIAL.
+
+              IF line_exists( mt_range_new_hire[ low = 'ALL' ] ).
+
+              ELSEIF line_exists( mt_range_new_hire[ low = 'YES' ] ).
+                  IF lv_is_new_hire = 'NO'.
+                      CONTINUE.
+                  ENDIF.
+
+              ELSEIF line_exists( mt_range_new_hire[ low = 'NO' ] ).
+                  IF lv_is_new_hire = 'YES'.
+                      CONTINUE.
+                  ENDIF.
+
+              ENDIF.
+
+          ENDIF.
+
+          ls_flat_employee-newHire = lv_is_new_hire.
+
+          APPEND ls_flat_employee TO mt_flat_data.
+        ENDLOOP.
+
+        " OUTPUT GENERATION
+        IF mt_flat_data IS NOT INITIAL.
+            create_file( ).
+            send_email( ).
+        ELSE.
+            create_file( ).
+            send_email( ).
+            ls_csr_runlog-status = 'No Data'.
+            MODIFY zhrt_csr_runlog FROM @ls_csr_runlog.
+        ENDIF.
+
+        IF mo_log IS BOUND.
+          mo_log->add_item( cl_bali_free_text_setter=>create(
+            severity = 'I'
+            text = CONV #( |Total records in report: { lines( mt_flat_data ) }.| ) ) ).
+          mo_log->add_item( cl_bali_free_text_setter=>create(
+            severity = 'I'
+            text = CONV #( |Job finished. Status { ls_csr_runlog-status }.| ) ) ).
+          cl_bali_log_db=>get_instance( )->save_log( log = mo_log assign_to_current_appl_job = abap_true ).
+        ENDIF.
+
+    CATCH cx_root INTO DATA(lx_err).
+        ls_csr_runlog-status = 'Error'.
+        MODIFY zhrt_csr_runlog FROM @ls_csr_runlog.
+        IF mo_log IS BOUND.
+           mo_log->add_item( cl_bali_free_text_setter=>create( severity = 'E' text = CONV #( lx_err->get_text( ) ) ) ).
+           mo_log->add_item( cl_bali_free_text_setter=>create(
+             severity = 'I'
+             text = CONV #( |Job finished. Status { ls_csr_runlog-status }.| ) ) ).
+           cl_bali_log_db=>get_instance( )->save_log( log = mo_log assign_to_current_appl_job = abap_true ).
+        ENDIF.
+
+    ENDTRY.
+
+
+  ENDMETHOD.
+
+
+  METHOD send_email.
+
+    DATA(lo_mail) = cl_bcs_mail_message=>create_instance( ).
+    DATA lv_email_rcvr TYPE c LENGTH 512.
+    DATA ls_content    TYPE string.
+
+    DATA lv_appurl     TYPE string VALUE 'href="https://colgate-hr-dev.launchpad.cfapps.us10.hana.ondemand.com/57616067-4604-4acb-b533-4680b24c61ae.candidatesearchreport.candidatesearchreport-0.0.1/index.html#/output/'.
+
+    lo_mail->set_sender( 'Interface Alerts <none@email.colgate.com>' ).
+
+    lv_email_rcvr = ls_userdtls-DefaultEmailAddress.
+
+    IF lv_email_rcvr IS INITIAL.
+       ls_csr_runlog-status = 'Error'.
+       MODIFY zhrt_csr_runlog FROM @ls_csr_runlog.
+       IF mo_log IS BOUND.
+          mo_log->add_item( cl_bali_free_text_setter=>create( severity = 'W' text = 'No email address found for user. Email not sent.' ) ).
+       ENDIF.
+       RETURN.
+    ENDIF.
+
+    lo_mail->add_recipient( iv_address = lv_email_rcvr
+                            iv_copy    = cl_bcs_mail_message=>to ).
+
+    ls_content = |Hi { ls_userdtls-PersonFullName },<br>| &&
+                 |<p>The scheduled Candidate Search Report <b>{ ls_csr_runlog-reportid }</b> has been successfully generated. | &&
+                 |<a { lv_appurl }{ ls_csr_runlog-reportid }">Click here</a> to view the report.</p>| &&
+                 |<br>| &&
+                 |<p>Note - This is a system generated email. Please do not reply!</p>|.
+
+    lo_mail->set_subject( |Candidate Search Report: { ls_csr_runlog-reportid }| ).
+
+    lo_mail->set_main( cl_bcs_mail_textpart=>create_instance( iv_content      = ls_content
+                                                              iv_content_type = 'text/html' ) ).
+
+    lo_mail->send( IMPORTING et_status      = DATA(lt_status)
+                             ev_mail_status = DATA(ld_mail_status) ).
+
+    IF mo_log IS BOUND.
+       mo_log->add_item( cl_bali_free_text_setter=>create(
+         severity = 'I'
+         text = CONV #( |Email notification sent successfully to { lv_email_rcvr }.| ) ) ).
+       cl_bali_log_db=>get_instance( )->save_log( log = mo_log assign_to_current_appl_job = abap_true ).
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD format_csv_date.
+    DATA(lv_date) = CONV string( iv_date ).
+    IF lv_date IS INITIAL OR lv_date = '00000000'.
+      RETURN.
+    ENDIF.
+    IF strlen( lv_date ) >= 8.
+      rv_date = |{ lv_date+4(2) }/{ lv_date+6(2) }/{ lv_date(4) }|.
+    ELSE.
+      rv_date = lv_date.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD create_file.
+      DATA lv_csv_string TYPE string.
+
+      lv_csv_string = 'Global ID,First Name,Last Name,Gender,Employment Status, New Hire, Department,' &&
+                      'Division,Country,Personnel Area,Position Title,Position Code,' &&
+                      'Is Salaried,Category,Reporting Org,Employee Group,Function,' &&
+                      'Sub-Function,Personal Salary Grade,Date In Grade,Time In Grade,' &&
+                      'Date In Position,Time In Position,Nationality,Second Nationality,' &&
+                      'Third Nationality,Risk Of Loss,Potential Rating,Performance Rating,' &&
+                      'Performance Year,Mobility Willingness,Mobility Regions,Mobility Timing,' &&
+                      'Mobility Comments,Key Role 1,Key Role 2,Key Role 3,' &&
+                      'Language 1,Fluency 1,Language 2,Fluency 2,Language 3,Fluency 3,' &&
+                      'Language 4,Fluency 4,Language 5,Fluency 5'.
+
+      lv_csv_string = |{ lv_csv_string }{ cl_abap_char_utilities=>cr_lf }|.
+
+      LOOP AT mt_flat_data INTO DATA(ls_row).
+         lv_csv_string = |{ lv_csv_string }| &&
+                         |"{ ls_row-globalColgateID }","{ ls_row-first_name }","{ ls_row-last_name }",| &&
+                         |"{ ls_row-gender }","{ ls_row-employmentStatus }","{ ls_row-newhire }","{ ls_row-department }","{ ls_row-division }",| &&
+                         |"{ ls_row-country }","{ ls_row-personnelArea }","{ ls_row-positionTitle }",| &&
+                         |"{ ls_row-positionCode }","{ ls_row-isSalaried }","{ ls_row-category }",| &&
+                         |"{ ls_row-reportingOrg }","{ ls_row-employeeGroup }","{ ls_row-function }",| &&
+                         |"{ ls_row-subfunction }","{ ls_row-personalSalaryGrade }","{ format_csv_date( ls_row-dateInGrade ) }",| &&
+                         |"{ ls_row-timeInGrade }","{ format_csv_date( ls_row-dateInPosition ) }","{ ls_row-timeInPosition }",| &&
+                         |"{ ls_row-nationality }","{ ls_row-second_nationality }","{ ls_row-thirdNationality }",| &&
+                         |"{ ls_row-riskOfLoss }","{ ls_row-potential_rating }","{ ls_row-performance_rating }",| &&
+                         |"{ ls_row-performance_year }","{ ls_row-mobility_willingness }","{ ls_row-mobility_regions }",| &&
+                         |"{ ls_row-mobility_timing }","{ ls_row-mobility_comments }","{ ls_row-key_role_1 }",| &&
+                         |"{ ls_row-key_role_2 }","{ ls_row-key_role_3 }","{ ls_row-language_1 }",| &&
+                         |"{ ls_row-fluency_1 }","{ ls_row-language_2 }","{ ls_row-fluency_2 }",| &&
+                         |"{ ls_row-language_3 }","{ ls_row-fluency_3 }","{ ls_row-language_4 }",| &&
+                         |"{ ls_row-fluency_4 }","{ ls_row-language_5 }","{ ls_row-fluency_5 }"| &&
+                         |{ cl_abap_char_utilities=>cr_lf }|.
+      ENDLOOP.
+
+      DATA(lv_xstring) = xco_cp=>string( lv_csv_string )->as_xstring( xco_cp_character=>code_page->utf_8 )->value.
+      write_file_to_dms( lv_xstring ).
+  ENDMETHOD.
+
+
+  METHOD write_file_to_dms.
+     DATA lv_email_rcvr TYPE c LENGTH 512.
+     DATA: lo_cmis_client TYPE REF TO if_cmis_client.
+     DATA: lt_props TYPE cmis_t_client_property, ls_prop LIKE LINE OF lt_props, ls_val LIKE LINE OF ls_prop-values.
+      DATA: lt_add_aces    TYPE cmis_t_key_values,
+            ls_add_ace     LIKE LINE OF lt_add_aces,
+            lt_remove_aces TYPE cmis_t_key_values,
+            ls_remove_ace  LIKE LINE OF lt_remove_aces.
+
+
+     lv_email_rcvr = ls_userdtls-DefaultEmailAddress.
+     IF lv_email_rcvr IS INITIAL.
+        lv_email_rcvr = sy-uname.
+      ENDIF.
+
+     lo_cmis_client = cl_cmis_client_factory2=>get_instance( ).
+
+     lo_cmis_client->get_repositories( IMPORTING et_repository_infos = FINAL(lt_repos) ).
+     READ TABLE lt_repos INTO DATA(ls_repo) WITH KEY name = 'out'.
+     IF sy-subrc <> 0. RETURN. ENDIF.
+
+     lo_cmis_client->get_children( EXPORTING iv_repository_id = ls_repo-id iv_folder_id = ls_repo-root_folder_id IMPORTING es_children = FINAL(ls_children) ).
+     DATA lv_folder_id TYPE string.
+
+     LOOP AT ls_children-objects_in_folder INTO DATA(ls_obj).
+        IF ls_obj-object-properties-properties[ 7 ]-value[ 1 ]-string_value = 'Candidate Search Report'.
+           lv_folder_id = ls_obj-object-properties-properties[ 8 ]-value[ 1 ]-string_value.
+           EXIT.
+        ENDIF.
+     ENDLOOP.
+     IF lv_folder_id IS INITIAL. RETURN. ENDIF.
+
+     ls_prop-id = cl_cmis_property_ids=>object_type_id. ls_val-string_value = cl_cmis_constants=>base_type_id-cmis_document. INSERT ls_val INTO TABLE ls_prop-values. INSERT ls_prop INTO TABLE lt_props. CLEAR: ls_prop, ls_val.
+     ls_prop-id = cl_cmis_property_ids=>name. ls_val-string_value = mv_dms_filename. INSERT ls_val INTO TABLE ls_prop-values. INSERT ls_prop INTO TABLE lt_props.
+
+     DATA ls_content TYPE cmis_s_content_raw.
+     ls_content-filename = mv_dms_filename.
+     ls_content-mime_type = 'text/csv'.
+     ls_content-stream = iv_data.
+
+     IF lv_email_rcvr IS NOT INITIAL.
+        lo_cmis_client->get_object(
+            EXPORTING iv_repository_id = ls_repo-id
+                      iv_object_id     = lv_folder_id
+                      iv_include_acl   = abap_true
+            IMPORTING es_object        = DATA(ls_folder_obj) ).
+
+        LOOP AT ls_folder_obj-acl-aces INTO DATA(ls_inherited_ace).
+                CLEAR ls_remove_ace.
+                ls_remove_ace-id = ls_inherited_ace-principal-id.
+                 APPEND ls_inherited_ace-permissions TO ls_remove_ace-values.
+                APPEND ls_remove_ace TO lt_remove_aces.
+*
+        ENDLOOP.
+        CLEAR ls_add_ace.
+        ls_add_ace-id = lv_email_rcvr.
+        APPEND 'cmis:write' TO ls_add_ace-values.
+        APPEND ls_add_ace TO lt_add_aces.
+
+     ENDIF.
+
+     " Destruction Logic
+
+        CLEAR: ls_prop, ls_val.
+        ls_prop-id = cl_cmis_property_ids=>secondary_object_type_ids.
+        ls_val-string_value = 'cmis:rm_destructionRetention'.
+        INSERT ls_val INTO TABLE ls_prop-values.
+        INSERT ls_prop INTO TABLE lt_props.
+
+        DATA lv_expiration TYPE cmis_s_property_value.
+        DATA lv_time       TYPE timestampl.
+
+        GET TIME STAMP FIELD lv_time.
+        lv_expiration-date_time_value-timestamp = cl_abap_tstmp=>add( tstmp = lv_time secs = 259200 ).
+
+        " Expiration Date
+        CLEAR: ls_prop, ls_val.
+        ls_prop-id = cl_cmis_property_ids=>expiration_date.
+        ls_val-date_time_value = lv_expiration-date_time_value.
+        INSERT ls_val INTO TABLE ls_prop-values.
+        INSERT ls_prop INTO TABLE lt_props.
+
+        "Destruction Date
+        CLEAR: ls_prop, ls_val.
+        ls_prop-id = cl_cmis_property_ids=>destruction_date.
+        ls_val-date_time_value = lv_expiration-date_time_value.
+        INSERT ls_val INTO TABLE ls_prop-values.
+        INSERT ls_prop INTO TABLE lt_props.
+
+     TRY.
+       lo_cmis_client->create_document( EXPORTING iv_repository_id = ls_repo-id it_properties = lt_props is_content = ls_content iv_folder_id = lv_folder_id it_add_aces = lt_add_aces it_remove_aces   = lt_remove_aces ).
+       ls_csr_runlog-filename = mv_dms_filename.
+       ls_csr_runlog-status   = 'Completed'.
+       MODIFY zhrt_csr_runlog FROM @ls_csr_runlog.
+       IF mo_log IS BOUND.
+          mo_log->add_item( cl_bali_free_text_setter=>create( severity = 'I' text = 'File successfully created in Document Management System.' ) ).
+          cl_bali_log_db=>get_instance( )->save_log( log = mo_log assign_to_current_appl_job = abap_true ).
+       ENDIF.
+     CATCH cx_root INTO DATA(lx_dms_err).
+       ls_csr_runlog-status = 'Error'.
+       MODIFY zhrt_csr_runlog FROM @ls_csr_runlog.
+       IF mo_log IS BOUND.
+          mo_log->add_item( cl_bali_free_text_setter=>create( severity = 'E' text = CONV #( lx_dms_err->get_text( ) ) ) ).
+          cl_bali_log_db=>get_instance( )->save_log( log = mo_log assign_to_current_appl_job = abap_true ).
+       ENDIF.
+     ENDTRY.
+  ENDMETHOD.
+
+  METHOD apply_rbp.
+
+    TYPES ty_id    TYPE c LENGTH 100.
+    TYPES ty_pages TYPE TABLE OF ty_id WITH DEFAULT KEY.
+
+    DATA lt_paginated_ids TYPE ty_pages.
+    DATA lt_pages TYPE TABLE OF ty_pages.
+
+    et_allowed_user_ids = it_user_ids.
+
+    DATA(lv_uuid) = cl_system_uuid=>create_uuid_x16_static( ).
+    DATA lv_batchid TYPE string.
+    lv_batchid = |batch_{ lv_uuid }|.
+
+    DATA(lv_nl) = cl_abap_char_utilities=>cr_lf.
+
+    SELECT low FROM @et_allowed_user_ids AS job INTO TABLE @lt_paginated_ids PACKAGE SIZE 180.
+      APPEND lt_paginated_ids TO lt_pages.
+    ENDSELECT.
+
+    DATA(lo_destination) = cl_http_destination_provider=>create_by_comm_arrangement( comm_scenario  = 'ZCS_SUCCESSFACTORS'
+                                                                                     comm_system_id = 'ZCS_SUCCESSFACTORS' ).
+
+    DATA(lo_http_client) = cl_web_http_client_manager=>create_by_http_destination( lo_destination ).
+
+    ASSERT lo_http_client IS BOUND.
+    DATA(lo_http_request) = lo_http_client->get_http_request( ).
+
+    lo_http_request->set_header_fields( VALUE #( ( name = 'successfactors-companyid' value = 'ColgateQA' )
+                                                 ( name = if_web_http_header=>content_type value = |multipart/mixed; boundary={ lv_batchid }| ) ) ) ##NO_TEXT.
+
+    LOOP AT lt_pages INTO DATA(lv_ids).
+      DATA lv_body TYPE string.
+      CLEAR lv_body.
+      LOOP AT lv_ids INTO DATA(lv_id).
+
+        lv_body = |{ lv_body }--{ lv_batchid }{ lv_nl }| &&
+                  |Content-Type: application/http{ lv_nl }| &&
+                  |Content-Transfer-Encoding: binary{ lv_nl }| &&
+                  |{ lv_nl }| &&
+                  |GET checkUserPermission?accessUserId='{ ls_userdtls-BPIdentificationNumber+2(8) }'&permType='sm_report'&permStringValue='rbp_succession_report'| &&
+                  |&permLongValue=-1l&targetUserId='{ lv_id }'&includeInactiveUser=true HTTP/1.1{ lv_nl }| &&
+                  |sap-cancel-on-close: false{ lv_nl }| &&
+                  |sap-contextid-accept: header{ lv_nl }| &&
+                  |Accept: application/json{ lv_nl }| &&
+                  |Accept-Language: en-US{ lv_nl }| &&
+                  |DataServiceVersion: 2.0{ lv_nl }| &&
+                  |MaxDataServiceVersion: 2.0{ lv_nl }| &&
+                  |X-Requested-With: XMLHttpRequest{ lv_nl }| &&
+                  |{ lv_nl }|.
+      ENDLOOP.
+
+      lv_body = |{ lv_body }--{ lv_batchid }--|.
+
+      lo_http_request->set_text( lv_body ).
+      lo_http_request->set_uri_path(
+        EXPORTING
+          i_uri_path = |/odata/v2/$batch|
+          multivalue = 0
+        RECEIVING
+          r_value    = lo_http_request ).
+
+      DATA(lo_http_response) = lo_http_client->execute( if_web_http_client=>post ).
+      DATA(lv_text) = lo_http_response->get_text( ).
+
+      IF lo_http_response->get_status( )-code = 202.
+        SPLIT lv_text AT cl_abap_char_utilities=>newline INTO TABLE DATA(lt_lines).
+        DELETE lt_lines WHERE TABLE_LINE NP |"checkUserPermission" : *|.
+        LOOP AT lt_lines INTO DATA(lv_line).
+          IF lv_line CS |false|.
+            DELETE et_allowed_user_ids WHERE low = lv_ids[ sy-tabix ].
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
+    ENDLOOP.
+
+    lo_http_client->close( ).
+
+  ENDMETHOD.
+ENDCLASS.
