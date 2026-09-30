@@ -1,0 +1,145 @@
+CLASS zhr_i_dmsread DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    INTERFACES if_rap_query_provider.
+
+    DATA: gv_success    TYPE abap_bool.
+
+    DATA: gt_parameters TYPE if_rap_query_request=>tt_parameters,
+          gv_report     TYPE string,
+          gv_filename   TYPE string.
+
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+ENDCLASS.
+
+
+
+CLASS ZHR_I_DMSREAD IMPLEMENTATION.
+
+
+  METHOD if_rap_query_provider~select.
+
+    DATA lv_files TYPE TABLE OF zhr_i_csr_dmsread.
+
+    gt_parameters = io_request->get_parameters(  ).
+    DATA(lt_paging) = io_request->get_paging(  ).
+
+    TRY.
+      gv_report = gt_parameters[ parameter_name = 'REPORT' ]-value.
+    CATCH cx_root ##NO_HANDLER.
+    ENDTRY.
+
+    SELECT SINGLE filename FROM zhrt_csr_runlog WHERE reportid = @gv_report INTO @gv_filename.
+
+    IF sy-subrc <> 0 OR gv_filename IS INITIAL.
+       APPEND VALUE #( name = 'DEBUG_ERROR'
+                       data = |Database Error: ReportID '{ gv_report }' not found or Filename is empty.| ) TO lv_files.
+       io_response->set_data( lv_files ).
+       RETURN.
+    ENDIF.
+
+    IF io_request->is_data_requested(  ).
+      CONSTANTS lc_mime_type     TYPE cmis_string VALUE 'text/plain'.
+
+      DATA lo_cmis_client TYPE REF TO if_cmis_client.
+
+      DATA lv_folder_id TYPE cmis_id.
+      DATA lv_file_id   TYPE cmis_id.
+
+      IF lo_cmis_client IS NOT BOUND.
+        lo_cmis_client = cl_cmis_client_factory2=>get_instance( ).
+      ENDIF.
+
+      TRY.
+          lo_cmis_client->get_repositories( IMPORTING et_repository_infos = FINAL(lt_repositories) ).
+
+          READ TABLE lt_repositories INTO DATA(lv_repositories) WITH KEY name = 'out'.
+
+          IF sy-subrc <> 0.
+             APPEND VALUE #( name = 'DEBUG_ERROR'
+                             data = 'CMIS Error: Repository "out" not found.' ) TO lv_files.
+             io_response->set_data( lv_files ).
+             RETURN.
+          ENDIF.
+
+          lo_cmis_client->get_children( EXPORTING iv_repository_id = lv_repositories-id
+                                                  iv_folder_id     = lv_repositories-root_folder_id
+                                        IMPORTING es_children      = FINAL(ls_children) ).
+
+          DATA(lt_folders) = ls_children-objects_in_folder.
+
+          LOOP AT lt_folders INTO DATA(lv_folders).
+            IF lv_folders-object-properties-properties[ 7 ]-value[ 1 ]-string_value = 'Candidate Search Report' .
+              lv_folder_id = lv_folders-object-properties-properties[ 8 ]-value[ 1 ]-string_value.
+              EXIT.
+            ENDIF.
+          ENDLOOP.
+
+          IF lv_folder_id IS INITIAL.
+             APPEND VALUE #( name = 'DEBUG_ERROR'
+                             data = 'CMIS Error: Folder "Candidate Search Report" not found.' ) TO lv_files.
+             io_response->set_data( lv_files ).
+             RETURN.
+          ENDIF.
+
+          " Get file ID
+          lo_cmis_client->get_children( EXPORTING iv_repository_id = lv_repositories-id
+                                                  iv_folder_id     = lv_folder_id
+                                        IMPORTING es_children      = FINAL(ls_existing_docs) ).
+
+          DATA(lt_docs) = ls_existing_docs-objects_in_folder.
+
+          LOOP AT lt_docs INTO DATA(lv_doc).
+            IF lv_doc-object-properties-properties[ 12 ]-value[ 1 ]-string_value = gv_filename.
+              lv_file_id = lv_doc-object-properties-properties[ 13 ]-value[ 1 ]-string_value.
+              EXIT.
+            ENDIF.
+          ENDLOOP.
+
+          IF lv_file_id IS INITIAL.
+             APPEND VALUE #( name = 'DEBUG_ERROR'
+                             data = |CMIS Error: File '{ gv_filename }' not found.| ) TO lv_files.
+             io_response->set_data( lv_files ).
+             RETURN.
+          ENDIF.
+
+          lo_cmis_client->get_content_stream(
+            EXPORTING
+              iv_repository_id = lv_repositories-id
+              iv_object_id     = lv_file_id
+              iv_mime_type     = lc_mime_type
+            IMPORTING
+              es_content       = DATA(lv_content)
+          ).
+
+          DATA lv_file TYPE zhr_i_csr_dmsread.
+
+          TRY.
+              lv_file-id   = lv_file_id.
+              lv_file-name = gv_filename.
+              lv_file-data = cl_abap_conv_codepage=>create_in( )->convert( source = lv_content-stream ).
+
+              APPEND lv_file TO lv_files.
+
+            CATCH cx_root INTO DATA(lx_conv_err).
+               APPEND VALUE #( name = 'DEBUG_ERROR' data = |Conversion Error: { lx_conv_err->get_text( ) }| ) TO lv_files.
+          ENDTRY.
+
+          io_response->set_data( lv_files ).
+          gv_success = abap_true.
+          RETURN.
+
+        CATCH cx_root INTO DATA(lx_cmis_err).
+           APPEND VALUE #( name = 'DEBUG_EXCEPTION'
+                           data = lx_cmis_err->get_text( ) ) TO lv_files.
+           io_response->set_data( lv_files ).
+      ENDTRY.
+
+    ENDIF.
+
+  ENDMETHOD.
+ENDCLASS.
