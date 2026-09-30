@@ -1,0 +1,1422 @@
+CLASS zcl_employeedata DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    INTERFACES if_rap_query_provider.
+
+     TYPES:
+      BEGIN OF ty_personal_info_nav,
+        preferred_name     TYPE zcsrmodel=>tys_per_personal_2-preferred_name, "first name"
+        custom_string_1    TYPE zcsrmodel=>tys_per_personal_2-custom_String_1, "last name"
+        nationality        TYPE zcsrmodel=>tys_per_personal_2-nationality,
+        second_nationality TYPE zcsrmodel=>tys_per_personal_2-second_nationality,
+        third_nationality  TYPE zcsrmodel=>tys_per_personal_2-third_nationality,
+        gender             TYPE zcsrmodel=>tys_per_personal_2-gender,
+      END OF ty_personal_info_nav.
+    TYPES:
+      BEGIN OF ty_flat_employee,
+        employmentStatus    TYPE zcsrmodel=>tys_emp_job_2-custom_string_25,
+        division            TYPE zcsrmodel=>tys_emp_job_2-custom_String_8,
+        country             TYPE zcsrmodel=>tys_emp_job_2-custom_String_46,
+        personnelArea       TYPE string,
+        positionTitle       TYPE zcsrmodel=>tys_emp_job_2-custom_String_32,
+        positionCode        TYPE zcsrmodel=>tys_emp_job_2-position,
+        isSalaried          TYPE zcsrmodel=>tys_emp_job_2-custom_String_17,
+        category            TYPE zcsrmodel=>tys_emp_job_2-custom_String_5,
+        reportingOrg        TYPE zcsrmodel=>tys_emp_job_2-custom_String_121,
+        employeeGroup       TYPE zcsrmodel=>tys_emp_job_2-employee_class,
+        function            TYPE string,
+        subfunction         TYPE string,
+        personalSalaryGrade TYPE zcsrmodel=>tys_emp_job_2-pay_grade,
+        dateInGrade         TYPE zcsrmodel=>tys_emp_job_2-pay_scale_level_entry_date,
+        first_name          TYPE zcsrmodel=>tys_per_personal_2-preferred_name,
+        last_name           TYPE zcsrmodel=>tys_per_personal_2-custom_String_1,
+        nationality         TYPE zcsrmodel=>tys_per_personal_2-nationality,
+        second_nationality  TYPE zcsrmodel=>tys_per_personal_2-second_nationality,
+        thirdNationality    TYPE zcsrmodel=>tys_per_personal_2-third_nationality,
+        gender              TYPE string,
+        globalColgateID     TYPE zcsrmodel=>tys_emp_job_2-user_id,
+        dateInPosition      TYPE zcsrmodel=>tys_user_2-date_in_position,
+        timeInPosition      TYPE zcsrmodel=>tys_user_2-timeinposition,
+        timeInGrade         TYPE zcsrmodel=>tys_user_2-time_in_grade,
+        riskOfLoss          TYPE zcsrmodel=>tys_user_2-risk_of_loss,
+        potential_rating    TYPE string,
+        mobility_willingness TYPE string,
+        mobility_regions    TYPE string,
+        mobility_timing     TYPE string,
+        department          TYPE string,
+        mobility_comments   TYPE string,
+        key_role_1          TYPE string,
+        key_role_2          TYPE string,
+        key_role_3          TYPE string,
+        performance_year    TYPE string,
+        performance_rating  TYPE string,
+        language_1          TYPE string,
+        fluency_1           TYPE string,
+        language_2          TYPE string,
+        fluency_2           TYPE string,
+        language_3          TYPE string,
+        fluency_3           TYPE string,
+        language_4          TYPE string,
+        fluency_4           TYPE string,
+        language_5          TYPE string,
+        fluency_5           TYPE string,
+        newHire TYPE string,
+      END OF ty_flat_employee.
+    TYPES tt_flat_employee TYPE TABLE OF ty_flat_employee WITH DEFAULT KEY.
+    TYPES:
+      BEGIN OF ty_person_nav,
+        personal_info_nav TYPE TABLE OF ty_personal_info_nav WITH DEFAULT KEY,
+      END OF ty_person_nav.
+    TYPES:
+      BEGIN OF ty_employment_nav,
+        person_nav TYPE ty_person_nav,
+        start_date TYPE zcsrmodel=>tys_emp_employment_2-start_date,
+      END OF ty_employment_nav.
+     TYPES:
+      BEGIN OF ty_business_unit_nav,
+        name_en_us TYPE zcsrmodel=>tys_fobusiness_unit_2-name_en_us,
+        external_code TYPE zcsrmodel=>tys_fobusiness_unit_2-external_code,
+      END OF ty_business_unit_nav.
+    TYPES:
+        BEGIN OF ty_department_nav,
+           external_code TYPE zcsrmodel=>tys_fodepartment_2-external_code,
+           name TYPE zcsrmodel=>tys_fodepartment_2-name,
+        END OF ty_department_nav.
+    TYPES:
+      BEGIN OF ty_location_nav,
+        name  TYPE zcsrmodel=>tys_folocation_2-name,
+        external_code TYPE zcsrmodel=>tys_folocation_2-external_code,
+      END OF ty_location_nav.
+    TYPES:
+      BEGIN OF ty_division_nav,
+        name_en_us    TYPE zcsrmodel=>tys_fodivision_2-name_en_us,
+      END OF ty_division_nav.
+    TYPES:
+      BEGIN OF ty_user_nav,
+        date_in_position TYPE zcsrmodel=>tys_user_2-date_in_position,
+        timeInPosition   TYPE zcsrmodel=>tys_user_2-timeinposition,
+        time_in_grade    TYPE zcsrmodel=>tys_user_2-time_in_grade,
+        risk_of_loss     TYPE zcsrmodel=>tys_user_2-risk_of_loss,
+        company_code     TYPE zcsrmodel=>tys_user_2-company_code,
+        employee_class   TYPE zcsrmodel=>tys_user_2-employee_class,
+      END OF ty_user_nav.
+
+    TYPES:
+      BEGIN OF ty_employee_data,
+        employee_class            TYPE zcsrmodel=>tys_emp_job_2-employee_class,"employee group"
+        custom_string_121            TYPE zcsrmodel=>tys_emp_job_2-custom_string_121,"reporting org"
+        custom_string_5           TYPE zcsrmodel=>tys_emp_job_2-custom_string_5, "Category"
+        custom_string_17          TYPE zcsrmodel=>tys_emp_job_2-custom_string_17, "is Salaried and Clerical"
+        custom_string_25         TYPE zcsrmodel=>tys_emp_job_2-custom_string_25, "employment status"
+        custom_string_8          TYPE zcsrmodel=>tys_emp_job_2-custom_String_8, "division"
+        custom_string_46         TYPE zcsrmodel=>tys_emp_job_2-custom_String_46, "country"
+        location                 TYPE zcsrmodel=>tys_emp_job_2-location, "personnelArea"
+        custom_string_32         TYPE zcsrmodel=>tys_emp_job_2-custom_String_32, "position title"
+        position                 TYPE zcsrmodel=>tys_emp_job_2-position, "position code"
+        business_unit            TYPE zcsrmodel=>tys_emp_job_2-business_unit, "function"
+        division                 TYPE zcsrmodel=>tys_emp_job_2-division, "subfunction"
+        user_id                  TYPE zcsrmodel=>tys_emp_job_2-user_id, "globalcolgateid"
+        pay_grade                TYPE zcsrmodel=>tys_emp_job_2-pay_grade, "payGrade"
+        start_date TYPE zcsrmodel=>tys_emp_employment_2-start_date,
+        pay_scale_level_entry_date TYPE zcsrmodel=>tys_emp_job_2-pay_scale_level_entry_date, "dateinGrade"
+        business_unit_nav          TYPE TABLE OF ty_business_unit_nav WITH DEFAULT KEY,
+        employment_nav TYPE TABLE OF ty_employment_nav WITH DEFAULT KEY,
+        user_nav       TYPE TABLE OF ty_user_nav WITH DEFAULT KEY,
+        division_nav               TYPE TABLE OF ty_division_nav WITH DEFAULT KEY,
+        location_nav               TYPE TABLE OF  ty_location_nav WITH DEFAULT KEY,
+        department_nav            TYPE TABLE OF ty_department_nav WITH DEFAULT KEY,
+      END OF ty_employee_data.
+
+    TYPES t_employee_data_table TYPE TABLE OF ty_employee_data.
+    TYPES: tt_pick_list_value TYPE TABLE OF zcsrmodel=>tys_pick_list_value_v_2_2.
+
+    " Ranges
+    TYPES: tt_range_user_id TYPE RANGE OF zcsrmodel=>tys_emp_job_2-user_id.
+    TYPES: tt_range_pers_area TYPE RANGE OF zcsrmodel=>tys_emp_job_2-location.
+    TYPES: tt_range_country TYPE RANGE OF zcsrmodel=>tys_emp_job_2-custom_string_46.
+    TYPES: tt_range_position TYPE RANGE OF zcsrmodel=>tys_emp_job_2-position.
+    TYPES: tt_range_emp_status TYPE RANGE OF zcsrmodel=>tys_emp_job_2-custom_string_25.
+    TYPES: tt_range_division TYPE RANGE OF zcsrmodel=>tys_emp_job_2-custom_string_8.
+    TYPES: tt_range_function TYPE RANGE OF zcsrmodel=>tys_emp_job_2-business_unit.
+    TYPES: tt_range_subfunction TYPE RANGE OF zcsrmodel=>tys_emp_job_2-division.
+    TYPES: tt_range_pay_grade TYPE RANGE OF zcsrmodel=>tys_emp_job_2-pay_grade.
+    TYPES: tt_range_emp_group TYPE RANGE OF zcsrmodel=>tys_emp_job_2-employee_class.
+    TYPES: tt_range_rep_org TYPE RANGE OF zcsrmodel=>tys_emp_job_2-custom_string_122.
+    TYPES: tt_range_category TYPE RANGE OF zcsrmodel=>tys_emp_job_2-custom_string_5.
+    TYPES: tt_range_is_salaried TYPE RANGE OF zcsrmodel=>tys_emp_job_2-custom_string_17.
+    TYPES: tt_range_gender      TYPE RANGE OF zcsrmodel=>tys_per_personal_2-gender.
+    TYPES: tt_range_potential TYPE RANGE OF zcsrmodel=>tys_cust_potential_rating_2-external_code.
+    TYPES: tt_range_department  TYPE RANGE OF zcsrmodel=>tys_emp_job_2-department.
+    TYPES: tt_cust_translate TYPE TABLE OF zcsrmodel=>tys_cust_translate_details_2.
+    TYPES: tt_range_new_hire  TYPE RANGE OF zcsrmodel=>tys_emp_job_2-custom_String_32.
+
+    " Background Types
+    TYPES: tt_background_languages TYPE TABLE OF zcsrmodel=>tys_background_languages_2 WITH DEFAULT KEY.
+    TYPES: tt_background_mobility TYPE TABLE OF zcsrmodel=>tys_background_mobility_2 WITH DEFAULT KEY.
+    TYPES: tt_background_regions TYPE TABLE OF zcsrmodel=>tys_background_mob_regions_2 WITH DEFAULT KEY.
+    TYPES: tt_trend_potential TYPE TABLE OF zcsrmodel=>tys_cust_potential_rating_2 WITH DEFAULT KEY.
+    TYPES: tt_trend_performance TYPE TABLE OF zcsrmodel=>tys_background_bgbwperforman_2 WITH DEFAULT KEY.
+    TYPES: tt_background_key_roles TYPE TABLE OF zcsrmodel=>tys_background_suggested_nex_2 WITH DEFAULT KEY.
+
+    METHODS get_employee_data
+      IMPORTING
+        io_client_proxy      TYPE REF TO /iwbep/if_cp_client_proxy
+        it_range_user_id     TYPE tt_range_user_id OPTIONAL
+        it_range_pers_area   TYPE tt_range_pers_area OPTIONAL
+        it_range_country     TYPE tt_range_country OPTIONAL
+        it_range_position    TYPE tt_range_position OPTIONAL
+        it_range_emp_status  TYPE tt_range_emp_status OPTIONAL
+        it_range_division    TYPE tt_range_division OPTIONAL
+        it_range_function    TYPE tt_range_function OPTIONAL
+        it_range_subfunction TYPE tt_range_subfunction OPTIONAL
+        it_range_pay_grade   TYPE tt_range_pay_grade OPTIONAL
+        it_range_emp_group   TYPE tt_range_emp_group OPTIONAL
+        it_range_rep_org     TYPE tt_range_rep_org OPTIONAL
+        it_range_category    TYPE tt_range_category OPTIONAL
+        it_range_is_salaried TYPE tt_range_is_salaried OPTIONAL
+        it_range_department  TYPE tt_range_department OPTIONAL
+        iv_top               TYPE i OPTIONAL
+        iv_skip              TYPE i OPTIONAL
+      EXPORTING
+        et_employee_data     TYPE t_employee_data_table
+        ev_total_count       TYPE int8
+      RAISING
+        cx_root.
+
+    METHODS get_picklist
+      IMPORTING
+        io_client_proxy TYPE REF TO /iwbep/if_cp_client_proxy
+      RAISING
+        cx_root.
+   METHODS calculate_duration
+      IMPORTING
+        iv_start_date      TYPE datum
+      RETURNING
+        VALUE(rv_duration) TYPE string.
+
+    METHODS get_languages_bulk
+      IMPORTING io_client_proxy TYPE REF TO /iwbep/if_cp_client_proxy
+                it_user_range   TYPE tt_range_user_id
+      EXPORTING et_languages    TYPE tt_background_languages
+      RAISING   cx_root.
+    METHODS get_users_by_gender
+          IMPORTING
+            io_client_proxy   TYPE REF TO /iwbep/if_cp_client_proxy
+            it_range_gender   TYPE tt_range_gender
+          EXPORTING
+            et_user_ids       TYPE tt_range_user_id
+          RAISING
+            cx_root.
+    METHODS get_mobility_bulk
+      IMPORTING io_client_proxy TYPE REF TO /iwbep/if_cp_client_proxy
+                it_user_range   TYPE tt_range_user_id
+      EXPORTING et_mobility     TYPE tt_background_mobility
+      RAISING   cx_root.
+
+    METHODS get_regions_bulk
+      IMPORTING io_client_proxy TYPE REF TO /iwbep/if_cp_client_proxy
+                it_user_range   TYPE tt_range_user_id
+      EXPORTING et_regions      TYPE tt_background_regions
+      RAISING   cx_root.
+
+    METHODS get_performance_bulk
+      IMPORTING io_client_proxy  TYPE REF TO /iwbep/if_cp_client_proxy
+                it_user_range    TYPE tt_range_user_id
+      EXPORTING et_performance   TYPE tt_trend_performance
+      RAISING   cx_root.
+
+    METHODS get_potential_bulk
+      IMPORTING io_client_proxy TYPE REF TO /iwbep/if_cp_client_proxy
+                it_user_range   TYPE tt_range_user_id
+      EXPORTING et_potential    TYPE tt_trend_potential
+      RAISING   cx_root.
+
+    METHODS get_reporting_org
+          IMPORTING io_client_proxy  TYPE REF TO /iwbep/if_cp_client_proxy
+          EXPORTING et_reporting_org TYPE tt_cust_translate
+          RAISING   cx_root.
+
+    METHODS get_key_roles_bulk
+      IMPORTING io_client_proxy TYPE REF TO /iwbep/if_cp_client_proxy
+                it_user_range   TYPE tt_range_user_id
+      EXPORTING et_roles        TYPE tt_background_key_roles
+      RAISING   cx_root.
+
+    METHODS get_background_batch
+      IMPORTING io_client_proxy TYPE REF TO /iwbep/if_cp_client_proxy
+                it_user_range   TYPE tt_range_user_id
+      EXPORTING et_languages    TYPE tt_background_languages
+                et_mobility     TYPE tt_background_mobility
+                et_regions      TYPE tt_background_regions
+                et_performance  TYPE tt_trend_performance
+                et_potential    TYPE tt_trend_potential
+                et_roles        TYPE tt_background_key_roles
+      RAISING   cx_root.
+
+    METHODS get_users_by_potential
+      IMPORTING
+        io_client_proxy   TYPE REF TO /iwbep/if_cp_client_proxy
+        it_range_potential TYPE tt_range_potential
+      EXPORTING
+        et_user_ids       TYPE tt_range_user_id
+      RAISING
+        cx_root.
+    DATA mt_picklist TYPE tt_pick_list_value.
+    DATA mv_debug_error TYPE string.
+    DATA: mt_cust_translate_details TYPE tt_cust_translate.
+
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+
+ENDCLASS.
+
+
+
+CLASS ZCL_EMPLOYEEDATA IMPLEMENTATION.
+
+
+    METHOD get_reporting_org.
+    DATA: lo_request TYPE REF TO /iwbep/if_cp_request_read_list,
+          lt_batch   TYPE tt_cust_translate,
+          lv_skip    TYPE i VALUE 0.
+   DATA lt_range_id TYPE RANGE OF string.
+    TRY.
+        lt_range_id = VALUE #( ( sign = 'I' option = 'EQ' low = 'REPORTING_ORG' ) ).
+
+        DO.
+          lo_request = io_client_proxy->create_resource_for_entity_set( 'CUST_TRANSLATE_DETAILS' )->create_request_for_read( ).
+          DATA(lo_filter_factory) = lo_request->create_filter_factory( ).
+          DATA(lo_filter) = lo_filter_factory->create_by_range(
+              iv_property_path = 'SECONDARY_IDENTIFIER'
+              it_range = lt_range_id
+          ).
+          lo_request->set_filter( lo_filter ).
+          lo_request->set_select_properties( VALUE #( ( `SECONDARY_IDENTIFIER` ) ( `CUST_PARAMETER_1` ) ( `CUST_OUTPUT` ) ) ).
+          lo_request->set_top( 1000 )->set_skip( lv_skip ).
+          lo_request->execute( )->get_business_data( IMPORTING et_business_data = lt_batch ).
+
+          APPEND LINES OF lt_batch TO et_reporting_org.
+
+          IF lines( lt_batch ) < 1000.
+            EXIT.
+          ENDIF.
+
+          lv_skip = lv_skip + 1000.
+        ENDDO.
+
+      CATCH cx_root ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD get_key_roles_bulk.
+    DATA: lo_request TYPE REF TO /iwbep/if_cp_request_read_list,
+          lt_batch   TYPE tt_background_key_roles,
+          lv_skip    TYPE i VALUE 0.
+    TRY.
+        DO.
+          lo_request = io_client_proxy->create_resource_for_entity_set( 'BACKGROUND_SUGGESTED_NEXT' )->create_request_for_read( ).
+          DATA(lo_filter_factory) = lo_request->create_filter_factory( ).
+          DATA(lo_filter) = lo_filter_factory->create_by_range( iv_property_path = 'USER_ID' it_range = it_user_range ).
+          lo_request->set_filter( lo_filter ).
+          lo_request->set_select_properties( VALUE #( ( `USER_ID` ) ( `TITLE` ) ) ).
+          lo_request->set_top( 1000 )->set_skip( lv_skip ).
+          lo_request->execute( )->get_business_data( IMPORTING et_business_data = lt_batch ).
+          APPEND LINES OF lt_batch TO et_roles.
+          IF lines( lt_batch ) < 1000. EXIT. ENDIF.
+          lv_skip = lv_skip + 1000.
+        ENDDO.
+      CATCH cx_root ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD get_employee_data.
+    DATA:
+      lo_read_list_request TYPE REF TO /iwbep/if_cp_request_read_list.
+    DATA:
+      lo_filter_factory    TYPE REF TO /iwbep/if_cp_filter_factory,
+      lo_filter_node_final TYPE REF TO /iwbep/if_cp_filter_node.
+
+    lo_read_list_request = io_client_proxy->create_resource_for_entity_set( 'EMP_JOB' )->create_request_for_read( ).
+    lo_filter_factory = lo_read_list_request->create_filter_factory( ).
+
+    IF it_range_user_id IS NOT INITIAL.
+      DATA(lo_filter_node_user) = lo_filter_factory->create_by_range( iv_property_path = 'USER_ID' it_range = it_range_user_id ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_user ) ELSE lo_filter_node_user ).
+    ENDIF.
+    IF it_range_rep_org IS NOT INITIAL.
+      DATA(lo_filter_node_rep_org) = lo_filter_factory->create_by_range( iv_property_path = 'CUSTOM_STRING_121' it_range = it_range_rep_org ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_rep_org ) ELSE lo_filter_node_rep_org ).
+    ENDIF.
+    IF it_range_pers_area IS NOT INITIAL.
+      DATA(lo_filter_node_pers) = lo_filter_factory->create_by_range( iv_property_path = 'LOCATION' it_range = it_range_pers_area ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_pers ) ELSE lo_filter_node_pers ).
+    ENDIF.
+    IF it_range_country IS NOT INITIAL.
+      DATA(lo_filter_node_country) = lo_filter_factory->create_by_range( iv_property_path = 'CUSTOM_STRING_46' it_range = it_range_country ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_country ) ELSE lo_filter_node_country ).
+    ENDIF.
+    IF it_range_position IS NOT INITIAL.
+      DATA(lo_filter_node_position) = lo_filter_factory->create_by_range( iv_property_path = 'POSITION' it_range = it_range_position ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_position ) ELSE lo_filter_node_position ).
+    ENDIF.
+    IF it_range_emp_status IS NOT INITIAL.
+      DATA(lo_filter_node_emp_status) = lo_filter_factory->create_by_range( iv_property_path = 'CUSTOM_STRING_25' it_range = it_range_emp_status ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_emp_status ) ELSE lo_filter_node_emp_status ).
+    ENDIF.
+    IF it_range_division IS NOT INITIAL.
+      DATA(lo_filter_node_division) = lo_filter_factory->create_by_range( iv_property_path = 'CUSTOM_STRING_8' it_range = it_range_division ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_division ) ELSE lo_filter_node_division ).
+    ENDIF.
+    IF it_range_function IS NOT INITIAL.
+      DATA(lo_filter_node_function) = lo_filter_factory->create_by_range( iv_property_path = 'BUSINESS_UNIT' it_range = it_range_function ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_function ) ELSE lo_filter_node_function ).
+    ENDIF.
+    IF it_range_subfunction IS NOT INITIAL.
+      DATA(lo_filter_node_subfunction) = lo_filter_factory->create_by_range( iv_property_path = 'DIVISION' it_range = it_range_subfunction ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_subfunction ) ELSE lo_filter_node_subfunction ).
+    ENDIF.
+    IF it_range_department IS NOT INITIAL.
+      DATA(lo_filter_node_department) = lo_filter_factory->create_by_range( iv_property_path = 'DEPARTMENT' it_range = it_range_department ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_department ) ELSE lo_filter_node_department ).
+    ENDIF.
+    IF it_range_pay_grade IS NOT INITIAL.
+      DATA(lo_filter_node_pay_grade) = lo_filter_factory->create_by_range( iv_property_path = 'PAY_GRADE' it_range = it_range_pay_grade ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_pay_grade ) ELSE lo_filter_node_pay_grade ).
+    ENDIF.
+    IF it_range_emp_group IS NOT INITIAL.
+      DATA(lo_filter_node_emp_group) = lo_filter_factory->create_by_range( iv_property_path = 'EMPLOYEE_CLASS' it_range = it_range_emp_group ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_emp_group ) ELSE lo_filter_node_emp_group ).
+    ENDIF.
+    IF it_range_category IS NOT INITIAL.
+      DATA(lo_filter_node_category) = lo_filter_factory->create_by_range( iv_property_path = 'CUSTOM_STRING_5' it_range = it_range_category ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_category ) ELSE lo_filter_node_category ).
+    ENDIF.
+    IF it_range_is_salaried IS NOT INITIAL.
+      DATA(lo_filter_node_is_salaried) = lo_filter_factory->create_by_range( iv_property_path = 'CUSTOM_STRING_17' it_range = it_range_is_salaried ).
+      lo_filter_node_final = COND #( WHEN lo_filter_node_final IS BOUND THEN lo_filter_node_final->and( lo_filter_node_is_salaried ) ELSE lo_filter_node_is_salaried ).
+    ENDIF.
+
+    IF lo_filter_node_final IS BOUND.
+      lo_read_list_request->set_filter( lo_filter_node_final ).
+    ENDIF.
+
+    IF iv_top IS SUPPLIED AND iv_top > 0.
+      lo_read_list_request->set_top( iv_top ).
+    ELSE.
+      lo_read_list_request->set_top( 50 ).
+    ENDIF.
+    IF iv_skip IS SUPPLIED.
+      lo_read_list_request->set_skip( iv_skip ).
+    ENDIF.
+
+
+    lo_read_list_request->set_select_properties( VALUE #( ( `CUSTOM_STRING_25` ) ( `USER_ID` ) ( `CUSTOM_STRING_8` )
+      ( `CUSTOM_STRING_46` )  ( `CUSTOM_STRING_121` )  ( `LOCATION` ) ( `CUSTOM_STRING_32` ) ( `BUSINESS_UNIT` ) ( `DIVISION` ) ( `PAY_GRADE` )
+      ( `PAY_SCALE_LEVEL_ENTRY_DATE` ) ( `POSITION` ) ( `EMPLOYEE_CLASS` ) ( `CUSTOM_STRING_5` )
+      ( `CUSTOM_STRING_17` ) ) ).
+
+    DATA(lo_expand_root) = lo_read_list_request->create_expand_node( ).
+    lo_read_list_request->set_orderby( VALUE #( ( property_path = 'USER_ID' ) ) ).
+
+    FINAL(lo_expand_node_emp_nav) = lo_expand_root->add_expand( 'EMPLOYMENT_NAV' ).
+    lo_expand_node_emp_nav->set_select_properties( VALUE #( ( `START_DATE` ) ) ).
+    FINAL(lo_expand_node_person_nav) = lo_expand_node_emp_nav->add_expand( 'PERSON_NAV' ).
+    lo_expand_node_person_nav->add_expand( 'PERSONAL_INFO_NAV' )->set_select_properties(
+      VALUE #( ( `PREFERRED_NAME` ) ( `CUSTOM_STRING_1` ) ( `NATIONALITY` ) ( `SECOND_NATIONALITY` ) ( `THIRD_NATIONALITY` ) ( `GENDER` ) ) ).
+
+    FINAL(lo_expand_node_user_nav) = lo_expand_root->add_expand( 'USER_NAV' ).
+    lo_expand_node_user_nav->set_select_properties( VALUE #( ( `DATE_IN_POSITION` ) ( `TIMEINPOSITION` )
+                                                             ( `TIME_IN_GRADE` ) ( `RISK_OF_LOSS` ) ) ).
+    FINAL(lo_expand_node_bu_nav) = lo_expand_root->add_expand( 'BUSINESS_UNIT_NAV' ).
+    lo_expand_node_bu_nav->set_select_properties( VALUE #( ( `NAME_EN_US` ) ( `EXTERNAL_CODE` ) ) ).
+    FINAL(lo_expand_node_div_nav) = lo_expand_root->add_expand( 'DIVISION_NAV' ).
+    lo_expand_node_div_nav->set_select_properties( VALUE #( ( `NAME_EN_US` ) ( `EXTERNAL_CODE` ) ) ).
+    FINAL(lo_expand_node_loc_nav) = lo_expand_root->add_expand( 'LOCATION_NAV' ).
+    lo_expand_node_loc_nav->set_select_properties( VALUE #( ( `NAME` ) ( `EXTERNAL_CODE` ) ) ).
+    FINAL(lo_expand_node_dept_nav) = lo_expand_root->add_expand( 'DEPARTMENT_NAV' ).
+    lo_expand_node_dept_nav->set_select_properties( VALUE #( ( `NAME` ) ( `EXTERNAL_CODE` ) ) ).
+    lo_read_list_request->request_count( ).
+
+    DATA(lo_response) = lo_read_list_request->execute( ).
+    ev_total_count = lo_response->get_count( ).
+    lo_response->get_business_data( IMPORTING et_business_data = et_employee_data ).
+
+  ENDMETHOD.
+
+
+    METHOD if_rap_query_provider~select.
+        DATA(top) = io_request->get_paging( )->get_page_size( ).
+        DATA(skip) = io_request->get_paging( )->get_offset( ).
+        DATA(lo_filter_object) = io_request->get_filter( ).
+        DATA lv_total_count TYPE int8.
+        DATA lv_debug_log TYPE string.
+        lv_debug_log = 'DEBUG:'.
+
+        " Range Tables
+        DATA lt_range_user_id     TYPE tt_range_user_id.
+        DATA lt_range_pers_area   TYPE tt_range_pers_area.
+        DATA lt_range_country     TYPE tt_range_country.
+        DATA lt_range_position    TYPE tt_range_position.
+        DATA lt_range_emp_status  TYPE tt_range_emp_status.
+        DATA lt_range_division    TYPE tt_range_division.
+        DATA lt_range_function    TYPE tt_range_function.
+        DATA lt_range_subfunction TYPE tt_range_subfunction.
+        DATA lt_range_pay_grade   TYPE tt_range_pay_grade.
+        DATA lt_range_emp_group   TYPE tt_range_emp_group.
+        DATA lt_range_rep_org     TYPE tt_range_rep_org.
+        DATA lt_range_category    TYPE tt_range_category.
+        DATA lt_range_is_salaried TYPE tt_range_is_salaried.
+        DATA lt_range_gender      TYPE tt_range_gender.
+        DATA lt_range_potential   TYPE tt_range_potential.
+
+        DATA: ls_range_line TYPE if_rap_query_filter=>ty_range_option.
+        DATA: lv_translated_value TYPE string.
+
+        " Output Structure Definition
+        TYPES:
+         BEGIN OF ty_flat_employee,
+           employmentStatus    TYPE zcsrmodel=>tys_emp_job_2-custom_string_25,
+           division            TYPE zcsrmodel=>tys_emp_job_2-custom_String_8,
+           country             TYPE zcsrmodel=>tys_emp_job_2-custom_String_46,
+           personnelArea       TYPE string,
+           positionTitle       TYPE zcsrmodel=>tys_emp_job_2-custom_String_32,
+           positionCode        TYPE zcsrmodel=>tys_emp_job_2-position,
+           isSalaried          TYPE zcsrmodel=>tys_emp_job_2-custom_String_17,
+           category            TYPE zcsrmodel=>tys_emp_job_2-custom_String_5,
+           reportingOrg        TYPE zcsrmodel=>tys_emp_job_2-custom_String_122,
+           employeeGroup       TYPE zcsrmodel=>tys_emp_job_2-employee_class,
+           function            TYPE string,
+           subfunction         TYPE string,
+           personalSalaryGrade TYPE zcsrmodel=>tys_emp_job_2-pay_grade,
+           dateInGrade         TYPE zcsrmodel=>tys_emp_job_2-pay_scale_level_entry_date,
+           first_name          TYPE zcsrmodel=>tys_per_personal_2-preferred_name,
+           last_name           TYPE zcsrmodel=>tys_per_personal_2-custom_String_1,
+           nationality         TYPE zcsrmodel=>tys_per_personal_2-nationality,
+           second_nationality  TYPE zcsrmodel=>tys_per_personal_2-second_nationality,
+           thirdNationality    TYPE zcsrmodel=>tys_per_personal_2-third_nationality,
+           gender              TYPE string,
+           globalColgateID     TYPE zcsrmodel=>tys_emp_job_2-user_id,
+           dateInPosition      TYPE zcsrmodel=>tys_user_2-date_in_position,
+           timeInPosition      TYPE zcsrmodel=>tys_user_2-timeinposition,
+           timeInGrade         TYPE zcsrmodel=>tys_user_2-time_in_grade,
+           riskOfLoss          TYPE zcsrmodel=>tys_user_2-risk_of_loss,
+           potential_rating    TYPE string,
+           mobility_willingness TYPE string,
+           mobility_regions    TYPE string,
+           mobility_timing     TYPE string,
+           mobility_comments   TYPE string,
+           key_role_1          TYPE string,
+           key_role_2          TYPE string,
+           key_role_3          TYPE string,
+           performance_year    TYPE string,
+           performance_rating  TYPE string,
+           language_1          TYPE string,
+           fluency_1           TYPE string,
+           language_2          TYPE string,
+           fluency_2           TYPE string,
+           language_3          TYPE string,
+           fluency_3           TYPE string,
+           language_4          TYPE string,
+           fluency_4           TYPE string,
+           language_5          TYPE string,
+           fluency_5           TYPE string,
+           END OF ty_flat_employee.
+
+        DATA lt_employee_data_flat   TYPE TABLE OF ty_flat_employee.
+        DATA lt_employee_data_nested TYPE t_employee_data_table.
+
+        " Proxy Setup
+        DATA lo_proxy_mgr TYPE REF TO zcl_csr_odata_proxy.
+        DATA lo_proxy     TYPE REF TO /iwbep/if_cp_client_proxy.
+        TRY.
+            lo_proxy_mgr = NEW #( ).
+            lo_proxy = lo_proxy_mgr->get_odatav2_client_proxy( ).
+          CATCH cx_root ##NO_HANDLER.
+            io_response->set_total_number_of_records( 0 ).
+            io_response->set_data( lt_employee_data_flat ).
+            RETURN.
+        ENDTRY.
+
+        TRY.
+            me->get_picklist( io_client_proxy = lo_proxy ).
+          CATCH cx_root ##NO_HANDLER.
+        ENDTRY.
+
+        " Filter Parsing
+        IF lo_filter_object IS BOUND.
+          TRY.
+              DATA(lt_all_filter_ranges) = lo_filter_object->get_as_ranges( ).
+              CATCH cx_rap_query_filter_no_range ##NO_HANDLER.
+          ENDTRY.
+        ENDIF.
+
+        LOOP AT lt_all_filter_ranges INTO FINAL(ls_filter).
+          CASE ls_filter-name.
+            WHEN 'GLOBALCOLGATEID'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = ls_range_line-low high = ls_range_line-high ) TO lt_range_user_id.
+              ENDLOOP.
+            WHEN 'GENDER'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                 APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = ls_range_line-low high = ls_range_line-high ) TO lt_range_gender.
+              ENDLOOP.
+            WHEN 'PERSONNELAREA'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = ls_range_line-low high = ls_range_line-high ) TO lt_range_pers_area.
+              ENDLOOP.
+            WHEN 'COUNTRY'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                 TRY. lv_translated_value = mt_picklist[ pick_list_v_2_id = 'ISOCountryList' external_code = ls_range_line-low ]-option_id. CATCH cx_sy_itab_line_not_found. lv_translated_value = ls_range_line-low. ENDTRY.
+                 APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = lv_translated_value high = ls_range_line-high ) TO lt_range_country.
+              ENDLOOP.
+            WHEN 'POSITIONCODE'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = ls_range_line-low high = ls_range_line-high ) TO lt_range_position.
+              ENDLOOP.
+            WHEN 'EMPLOYMENTSTATUS'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                 TRY. lv_translated_value = mt_picklist[ pick_list_v_2_id = 'employee-status' external_code = ls_range_line-low ]-option_id. CATCH cx_sy_itab_line_not_found. lv_translated_value = ls_range_line-low. ENDTRY.
+                 APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = lv_translated_value high = ls_range_line-high ) TO lt_range_emp_status.
+              ENDLOOP.
+             WHEN 'DIVISION'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                 APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = ls_range_line-low high = ls_range_line-high ) TO lt_range_division.
+              ENDLOOP.
+             WHEN 'FUNCTION'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = ls_range_line-low high = ls_range_line-high ) TO lt_range_function.
+              ENDLOOP.
+             WHEN 'SUBFUNCTION'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = ls_range_line-low high = ls_range_line-high ) TO lt_range_subfunction.
+              ENDLOOP.
+             WHEN 'PERSONALSALARYGRADE'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = ls_range_line-low high = ls_range_line-high ) TO lt_range_pay_grade.
+              ENDLOOP.
+             WHEN 'EMPLOYEEGROUP'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                 TRY. lv_translated_value = mt_picklist[ pick_list_v_2_id = 'EmployeeClass' external_code = ls_range_line-low ]-option_id. CATCH cx_sy_itab_line_not_found. lv_translated_value = ls_range_line-low. ENDTRY.
+                 APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = lv_translated_value high = ls_range_line-high ) TO lt_range_emp_group.
+              ENDLOOP.
+             WHEN 'REPORTINGORG'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = ls_range_line-low high = ls_range_line-high ) TO lt_range_rep_org.
+              ENDLOOP.
+             WHEN 'CATEGORY'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                 TRY. lv_translated_value = mt_picklist[ pick_list_v_2_id = 'CP_Category' external_code = ls_range_line-low ]-option_id. CATCH cx_sy_itab_line_not_found. lv_translated_value = ls_range_line-low. ENDTRY.
+                 APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = lv_translated_value high = ls_range_line-high ) TO lt_range_category.
+              ENDLOOP.
+             WHEN 'ISSALARIED'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+                 TRY. lv_translated_value = mt_picklist[ pick_list_v_2_id = 'yesNo' external_code = ls_range_line-low ]-option_id. CATCH cx_sy_itab_line_not_found. lv_translated_value = ls_range_line-low. ENDTRY.
+                 APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = lv_translated_value high = ls_range_line-high ) TO lt_range_is_salaried.
+              ENDLOOP.
+              WHEN 'POTENTIAL_RATING'.
+              LOOP AT ls_filter-range INTO ls_range_line.
+
+                APPEND VALUE #( sign = ls_range_line-sign option = ls_range_line-option low = ls_range_line-low high = ls_range_line-high ) TO lt_range_potential.
+              ENDLOOP.
+          ENDCASE.
+        ENDLOOP.
+    lv_debug_log = |{ lv_debug_log } [Filters: Area={ lines( lt_range_pers_area ) } Gen={ lines( lt_range_gender ) } Pot={ lines( lt_range_potential ) }]|.
+    " -----------------------------------------------------------------
+        " GENDER PRE-FETCH LOGIC
+        " -----------------------------------------------------------------
+        IF lt_range_gender IS NOT INITIAL.
+            DATA lt_gender_users TYPE tt_range_user_id.
+            TRY.
+                me->get_users_by_gender(
+                   EXPORTING io_client_proxy = lo_proxy it_range_gender = lt_range_gender
+                   IMPORTING et_user_ids     = lt_gender_users
+                ).
+
+                SORT lt_gender_users BY low.
+
+                IF lt_range_user_id IS INITIAL.
+                    lt_range_user_id = lt_gender_users.
+                ELSE.
+                    DATA lt_final_users TYPE tt_range_user_id.
+
+                    LOOP AT lt_range_user_id INTO DATA(ls_uid).
+
+                       READ TABLE lt_gender_users TRANSPORTING NO FIELDS
+                            WITH KEY low = ls_uid-low BINARY SEARCH.
+
+                       IF sy-subrc = 0.
+                           APPEND ls_uid TO lt_final_users.
+                       ENDIF.
+                    ENDLOOP.
+                    lt_range_user_id = lt_final_users.
+                ENDIF.
+
+                IF lt_gender_users IS INITIAL OR ( lt_range_user_id IS INITIAL AND lt_gender_users IS NOT INITIAL ).
+                     CLEAR lt_range_user_id. " Clear previous data
+                     APPEND VALUE #( sign = 'I' option = 'EQ' low = 'NO_MATCH_FOUND' ) TO lt_range_user_id.
+                ENDIF.
+            CATCH cx_root ##NO_HANDLER.
+            ENDTRY.
+        ENDIF.
+        " -----------------------------------------------------------------
+        " POTENTIAL RATING PRE-FETCH LOGIC
+        " -----------------------------------------------------------------
+        IF lt_range_potential IS NOT INITIAL.
+            DATA lt_potential_users TYPE tt_range_user_id.
+            TRY.
+                me->get_users_by_potential(
+                   EXPORTING io_client_proxy = lo_proxy it_range_potential = lt_range_potential
+                   IMPORTING et_user_ids     = lt_potential_users
+                ).
+
+                SORT lt_potential_users BY low.
+
+                IF lt_range_user_id IS INITIAL.
+                    lt_range_user_id = lt_potential_users.
+                ELSE.
+                    DATA lt_final_users_pot TYPE tt_range_user_id.
+                    LOOP AT lt_range_user_id INTO DATA(ls_uid_pot).
+                       READ TABLE lt_potential_users TRANSPORTING NO FIELDS
+                            WITH KEY low = ls_uid_pot-low BINARY SEARCH.
+                       IF sy-subrc = 0.
+                           APPEND ls_uid_pot TO lt_final_users_pot.
+                       ENDIF.
+                    ENDLOOP.
+                    lt_range_user_id = lt_final_users_pot.
+                ENDIF.
+
+                IF lt_potential_users IS INITIAL OR ( lt_range_user_id IS INITIAL AND lt_potential_users IS NOT INITIAL ).
+                     CLEAR lt_range_user_id.
+                     APPEND VALUE #( sign = 'I' option = 'EQ' low = 'NO_MATCH_FOUND' ) TO lt_range_user_id.
+                ENDIF.
+            CATCH cx_root ##NO_HANDLER.
+            ENDTRY.
+        ENDIF.
+
+    lv_debug_log = |{ lv_debug_log } [MainQueryIDs: { lines( lt_range_user_id ) }]|.
+        CONSTANTS lc_emp_batch_size TYPE i VALUE 150.
+        DATA lt_main_batch_ids      TYPE tt_range_user_id.
+        DATA lt_main_batch_result   TYPE t_employee_data_table.
+        IF lt_range_user_id IS NOT INITIAL.
+
+            DATA(lv_req_top)  = io_request->get_paging( )->get_page_size( ).
+            DATA(lv_req_skip) = io_request->get_paging( )->get_offset( ).
+            IF lv_req_top <= 0. lv_req_top = 50. ENDIF.
+
+            DATA(lv_matches_found)   = 0.
+            DATA(lv_matches_skipped) = 0.
+
+            DATA(lv_candidate_total) = lines( lt_range_user_id ).
+            DATA(lv_candidate_idx)   = 1.
+            CONSTANTS lc_process_batch TYPE i VALUE 150. " Check 150 candidates at a time
+
+            WHILE lv_candidate_idx <= lv_candidate_total.
+
+                IF lv_matches_found >= lv_req_top.
+                    EXIT.
+                ENDIF.
+
+                CLEAR: lt_main_batch_ids, lt_main_batch_result.
+                DATA(lv_candidate_end) = lv_candidate_idx + lc_process_batch - 1.
+                IF lv_candidate_end > lv_candidate_total. lv_candidate_end = lv_candidate_total. ENDIF.
+
+                APPEND LINES OF lt_range_user_id FROM lv_candidate_idx TO lv_candidate_end TO lt_main_batch_ids.
+
+                TRY.
+                    me->get_employee_data(
+                      EXPORTING
+                        io_client_proxy      = lo_proxy
+                        it_range_user_id     = lt_main_batch_ids
+                        it_range_pers_area   = lt_range_pers_area
+                        it_range_country     = lt_range_country
+                        it_range_position    = lt_range_position
+                        it_range_emp_status  = lt_range_emp_status
+                        it_range_division    = lt_range_division
+                        it_range_function    = lt_range_function
+                        it_range_subfunction = lt_range_subfunction
+                        it_range_pay_grade   = lt_range_pay_grade
+                        it_range_emp_group   = lt_range_emp_group
+                        it_range_rep_org     = lt_range_rep_org
+                        it_range_category    = lt_range_category
+                        it_range_is_salaried = lt_range_is_salaried
+                        iv_top               = 0
+                        iv_skip              = 0
+                      IMPORTING
+                        et_employee_data     = lt_main_batch_result
+                    ).
+
+                    LOOP AT lt_main_batch_result INTO DATA(ls_match).
+
+                        IF lv_matches_skipped < lv_req_skip.
+                            lv_matches_skipped = lv_matches_skipped + 1.
+                            CONTINUE.
+                        ENDIF.
+
+                        IF lv_matches_found < lv_req_top.
+                            APPEND ls_match TO lt_employee_data_nested.
+                            lv_matches_found = lv_matches_found + 1.
+                        ELSE.
+                            EXIT.
+                        ENDIF.
+                    ENDLOOP.
+
+                CATCH cx_root ##NO_HANDLER.
+                ENDTRY.
+
+                lv_candidate_idx = lv_candidate_end + 1.
+            ENDWHILE.
+
+
+            lv_total_count = lv_candidate_total.
+
+        ELSE.
+            TRY.
+                me->get_employee_data(
+                  EXPORTING
+                    io_client_proxy      = lo_proxy
+                    it_range_pers_area   = lt_range_pers_area
+                    it_range_country     = lt_range_country
+                    it_range_position    = lt_range_position
+                    it_range_emp_status  = lt_range_emp_status
+                    it_range_division    = lt_range_division
+                    it_range_function    = lt_range_function
+                    it_range_subfunction = lt_range_subfunction
+                    it_range_pay_grade   = lt_range_pay_grade
+                    it_range_emp_group   = lt_range_emp_group
+                    it_range_rep_org     = lt_range_rep_org
+                    it_range_category    = lt_range_category
+                    it_range_is_salaried = lt_range_is_salaried
+                    iv_top               = CONV i( top )
+                    iv_skip              = CONV i( skip )
+                  IMPORTING
+                    et_employee_data     = lt_employee_data_nested
+                    ev_total_count       = lv_total_count
+                ).
+              CATCH cx_root.
+                 io_response->set_total_number_of_records( 0 ).
+                 io_response->set_data( lt_employee_data_flat ).
+                 RETURN.
+            ENDTRY.
+        ENDIF.
+
+        IF lt_employee_data_nested IS INITIAL.
+          io_response->set_total_number_of_records( 0 ).
+          io_response->set_data( lt_employee_data_flat ).
+          RETURN.
+        ENDIF.
+
+        DATA lt_all_user_ids TYPE TABLE OF zcsrmodel=>tys_emp_job_2-user_id.
+        lt_all_user_ids = VALUE #( FOR emp IN lt_employee_data_nested ( emp-user_id ) ).
+
+        DATA: lt_bulk_languages   TYPE tt_background_languages,
+              lt_bulk_mobility    TYPE tt_background_mobility,
+              lt_bulk_regions     TYPE tt_background_regions,
+              lt_bulk_performance TYPE tt_trend_performance,
+              lt_bulk_potential   TYPE tt_trend_potential,
+              lt_bulk_roles       TYPE tt_background_key_roles.
+
+        DATA: lt_chunk_languages   TYPE tt_background_languages,
+              lt_chunk_mobility    TYPE tt_background_mobility,
+              lt_chunk_regions     TYPE tt_background_regions,
+              lt_chunk_performance TYPE tt_trend_performance,
+              lt_chunk_potential   TYPE tt_trend_potential,
+              lt_chunk_roles       TYPE tt_background_key_roles.
+
+        DATA lt_chunk_user_ids TYPE TABLE OF zcsrmodel=>tys_emp_job_2-user_id.
+        DATA lt_batch_range TYPE tt_range_user_id.
+
+        " BATCHING FOR BACKGROUND DATA
+        CONSTANTS lc_bg_batch_size TYPE i VALUE 170.
+
+        IF lt_all_user_ids IS NOT INITIAL.
+            DATA(lv_total_users) = lines( lt_all_user_ids ).
+            DATA(lv_batch_start) = 1.
+
+            WHILE lv_batch_start <= lv_total_users.
+                CLEAR: lt_chunk_user_ids, lt_batch_range, lt_chunk_languages, lt_chunk_mobility, lt_chunk_regions, lt_chunk_performance, lt_chunk_potential, lt_chunk_roles.
+
+                DATA(lv_batch_end) = lv_batch_start + lc_bg_batch_size - 1.
+                IF lv_batch_end > lv_total_users.
+                    lv_batch_end = lv_total_users.
+                ENDIF.
+                APPEND LINES OF lt_all_user_ids FROM lv_batch_start TO lv_batch_end TO lt_chunk_user_ids.
+
+                lt_batch_range = VALUE #( FOR u_id IN lt_chunk_user_ids ( sign = 'I' option = 'EQ' low = u_id ) ).
+
+                TRY.
+                    me->get_background_batch(
+                      EXPORTING
+                        io_client_proxy = lo_proxy
+                        it_user_range   = lt_batch_range
+                      IMPORTING
+                        et_languages    = lt_chunk_languages
+                        et_mobility     = lt_chunk_mobility
+                        et_regions      = lt_chunk_regions
+                        et_performance  = lt_chunk_performance
+                        et_potential    = lt_chunk_potential
+                        et_roles        = lt_chunk_roles ).
+                    APPEND LINES OF lt_chunk_languages TO lt_bulk_languages.
+                    APPEND LINES OF lt_chunk_mobility TO lt_bulk_mobility.
+                    APPEND LINES OF lt_chunk_regions TO lt_bulk_regions.
+                    APPEND LINES OF lt_chunk_performance TO lt_bulk_performance.
+                    APPEND LINES OF lt_chunk_potential TO lt_bulk_potential.
+                    APPEND LINES OF lt_chunk_roles TO lt_bulk_roles.
+                CATCH cx_root ##NO_HANDLER.
+                ENDTRY.
+                lv_batch_start = lv_batch_end + 1.
+            ENDWHILE.
+        ENDIF.
+
+        SORT lt_bulk_languages BY user_id.
+        SORT lt_bulk_mobility BY user_id.
+        SORT lt_bulk_regions BY user_id.
+        SORT lt_bulk_performance BY user_id.
+        SORT lt_bulk_potential BY external_code.
+        SORT lt_bulk_roles BY user_id.
+
+        " MAPPING LOGIC
+        DATA ls_flat_employee TYPE ty_flat_employee.
+
+        LOOP AT lt_employee_data_nested ASSIGNING FIELD-SYMBOL(<fs_employee>).
+          CLEAR ls_flat_employee.
+          ls_flat_employee = CORRESPONDING #( <fs_employee> MAPPING
+              globalColgateID       = user_id
+              personnelArea         = location
+              positionTitle         = custom_string_32
+              personalSalaryGrade = pay_grade
+              dateInGrade           = pay_scale_level_entry_date
+              positionCode          = position
+           ).
+
+          " Navigation Properties
+          ls_flat_employee-first_name = VALUE #( <fs_employee>-employment_nav[ 1 ]-person_nav-personal_info_nav[ 1 ]-preferred_name OPTIONAL ).
+          ls_flat_employee-last_name  = VALUE #( <fs_employee>-employment_nav[ 1 ]-person_nav-personal_info_nav[ 1 ]-custom_string_1 OPTIONAL ).
+          ls_flat_employee-nationality = VALUE #( <fs_employee>-employment_nav[ 1 ]-person_nav-personal_info_nav[ 1 ]-nationality OPTIONAL ).
+          ls_flat_employee-second_nationality = VALUE #( <fs_employee>-employment_nav[ 1 ]-person_nav-personal_info_nav[ 1 ]-second_nationality OPTIONAL ).
+          ls_flat_employee-thirdNationality = VALUE #( <fs_employee>-employment_nav[ 1 ]-person_nav-personal_info_nav[ 1 ]-third_nationality OPTIONAL ).
+          ls_flat_employee-gender = VALUE #( <fs_employee>-employment_nav[ 1 ]-person_nav-personal_info_nav[ 1 ]-gender OPTIONAL ).
+
+          ls_flat_employee-dateInPosition = VALUE #( <fs_employee>-user_nav[ 1 ]-date_in_position OPTIONAL ).
+          ls_flat_employee-function = VALUE #( <fs_employee>-business_unit_nav[ 1 ]-name_en_us OPTIONAL ).
+          ls_flat_employee-subfunction = VALUE #( <fs_employee>-division_nav[ 1 ]-name_en_us OPTIONAL ).
+          ls_flat_employee-personnelArea = VALUE #( <fs_employee>-location_nav[ 1 ]-name OPTIONAL ).
+
+          IF ls_flat_employee-dateInPosition IS NOT INITIAL.
+            ls_flat_employee-timeInPosition = calculate_duration( ls_flat_employee-dateInPosition ).
+          ENDIF.
+          ls_flat_employee-dateInGrade = <fs_employee>-pay_scale_level_entry_date.
+          IF ls_flat_employee-dateInGrade IS NOT INITIAL.
+             ls_flat_employee-timeInGrade = calculate_duration( ls_flat_employee-dateInGrade ).
+          ENDIF.
+
+          " Picklist Mappings
+          TRY. ls_flat_employee-country = mt_picklist[ option_id = <fs_employee>-custom_string_46 pick_list_v_2_id = 'ISOCountryList' ]-external_code. CATCH cx_sy_itab_line_not_found ##NO_HANDLER. ls_flat_employee-country = <fs_employee>-custom_string_46
+.
+    ENDTRY.
+          TRY. ls_flat_employee-employmentStatus = mt_picklist[ option_id = <fs_employee>-custom_string_25 pick_list_v_2_id = 'employee-status' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+          ls_flat_employee-employmentStatus = <fs_employee>-custom_string_25
+    . ENDTRY.
+          TRY. ls_flat_employee-division = mt_picklist[ option_id = <fs_employee>-custom_string_8 pick_list_v_2_id = 'cust_division' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER. ls_flat_employee-division = <fs_employee>-custom_string_8.
+    ENDTRY.
+          DATA(lv_risk_id) = VALUE #( <fs_employee>-user_nav[ 1 ]-risk_of_loss OPTIONAL ).
+          IF lv_risk_id IS NOT INITIAL. TRY. ls_flat_employee-riskOfLoss = mt_picklist[ option_id = lv_risk_id pick_list_v_2_id = 'riskOfLoss' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER. ls_flat_employee-riskOfLoss = lv_risk_id. ENDTRY.
+    ENDIF.
+          TRY. ls_flat_employee-employeeGroup = mt_picklist[ option_id = <fs_employee>-employee_class pick_list_v_2_id = 'EmployeeClass' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+          ls_flat_employee-employeeGroup = <fs_employee>-employee_class. ENDTRY.
+          TRY. ls_flat_employee-category = mt_picklist[ option_id = <fs_employee>-custom_string_5 pick_list_v_2_id = 'CP_Category' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+ls_flat_employee-category = <fs_employee>-custom_string_5.
+ENDTRY.
+          TRY. ls_flat_employee-isSalaried = mt_picklist[ option_id = <fs_employee>-custom_string_17 pick_list_v_2_id = 'yesNo' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER. ls_flat_employee-isSalaried = <fs_employee>-custom_string_17.
+ENDTRY.
+
+          " Background Mappings
+          READ TABLE lt_bulk_mobility INTO DATA(ls_mob) WITH KEY user_id = <fs_employee>-user_id BINARY SEARCH.
+          IF sy-subrc = 0.
+             TRY. ls_flat_employee-mobility_willingness = mt_picklist[ option_id = ls_mob-willingness pick_list_v_2_id = 'IDP_Willingness_to_Relocate' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+             ls_flat_employee-mobility_willingness = ls_mob-willingness.
+    ENDTRY.
+             ls_flat_employee-mobility_comments = ls_mob-comments.
+             DATA(lv_year_lbl) = ls_mob-timingyear.
+             TRY. lv_year_lbl = mt_picklist[ option_id = ls_mob-timingyear pick_list_v_2_id = 'reloyears' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER. ENDTRY.
+             IF ls_mob-timingquarter IS NOT INITIAL.
+                 DATA(lv_timing_lbl) = ls_mob-timingquarter.
+                 TRY. lv_timing_lbl = mt_picklist[ option_id = ls_mob-timingquarter pick_list_v_2_id = 'IDP_Relocation_Timeline' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER. ENDTRY.
+               ls_flat_employee-mobility_timing = |{ lv_timing_lbl }, { lv_year_lbl }|.
+             ELSE.
+                ls_flat_employee-mobility_timing = lv_year_lbl.
+             ENDIF.
+          ENDIF.
+
+          READ TABLE lt_bulk_regions INTO DATA(ls_reg) WITH KEY user_id = <fs_employee>-user_id BINARY SEARCH.
+          IF sy-subrc = 0. ls_flat_employee-mobility_regions = ls_reg-region_list. ENDIF.
+
+          READ TABLE lt_bulk_performance INTO DATA(ls_perf) WITH KEY user_id = <fs_employee>-user_id BINARY SEARCH.
+          IF sy-subrc = 0. ls_flat_employee-performance_rating = ls_perf-ratings. IF ls_perf-startdate IS NOT INITIAL. ls_flat_employee-performance_year = ls_perf-startdate(4). ENDIF. ENDIF.
+
+          READ TABLE lt_bulk_potential INTO DATA(ls_pot) WITH KEY external_code = <fs_employee>-user_id BINARY SEARCH.
+          IF sy-subrc = 0. TRY. ls_flat_employee-potential_rating = mt_picklist[ external_code = ls_pot-cust_potential_rating pick_list_v_2_id = 'potRating' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+           ls_flat_employee-potential_rating = ls_pot-cust_potential_rating.
+          ENDTRY. ENDIF.
+
+          DATA(lv_role_idx) = 0.
+          LOOP AT lt_bulk_roles INTO DATA(ls_role) WHERE user_id = <fs_employee>-user_id.
+             lv_role_idx += 1.
+             DATA(lv_role_title) = ls_role-title.
+             IF ls_role-title CO '0123456789 '.
+               TRY.
+                   lv_role_title = mt_picklist[ option_id = ls_role-title pick_list_v_2_id = 'NextRoles' ]-label_en_us.
+                 CATCH cx_sy_itab_line_not_found cx_sy_conversion_no_number ##NO_HANDLER.
+               ENDTRY.
+             ENDIF.
+             CASE lv_role_idx. WHEN 1. ls_flat_employee-key_role_1 = lv_role_title. WHEN 2. ls_flat_employee-key_role_2 = lv_role_title. WHEN 3. ls_flat_employee-key_role_3 = lv_role_title. ENDCASE.
+             IF lv_role_idx >= 3. EXIT. ENDIF.
+          ENDLOOP.
+
+          DATA(lv_lang_idx) = 0.
+          LOOP AT lt_bulk_languages INTO DATA(ls_lang) WHERE user_id = <fs_employee>-user_id.
+             lv_lang_idx += 1.
+             DATA(lv_lang_lbl) = ls_lang-language.
+             TRY. lv_lang_lbl = mt_picklist[ option_id = ls_lang-language pick_list_v_2_id = 'language' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER. ENDTRY.
+             DATA(lv_fluency_lbl) = ls_lang-fluency.
+             TRY. lv_fluency_lbl = mt_picklist[ option_id = ls_lang-fluency pick_list_v_2_id = 'fluency~%1' ]-label_en_us. CATCH cx_sy_itab_line_not_found ##NO_HANDLER. ENDTRY.
+             CASE lv_lang_idx.
+               WHEN 1. ls_flat_employee-language_1 = lv_lang_lbl. ls_flat_employee-fluency_1 = lv_fluency_lbl.
+               WHEN 2. ls_flat_employee-language_2 = lv_lang_lbl. ls_flat_employee-fluency_2 = lv_fluency_lbl.
+               WHEN 3. ls_flat_employee-language_3 = lv_lang_lbl. ls_flat_employee-fluency_3 = lv_fluency_lbl.
+               WHEN 4. ls_flat_employee-language_4 = lv_lang_lbl. ls_flat_employee-fluency_4 = lv_fluency_lbl.
+               WHEN 5. ls_flat_employee-language_5 = lv_lang_lbl. ls_flat_employee-fluency_5 = lv_fluency_lbl.
+             ENDCASE.
+             IF lv_lang_idx >= 5. EXIT. ENDIF.
+          ENDLOOP.
+
+          APPEND ls_flat_employee TO lt_employee_data_flat.
+       ENDLOOP.
+       IF io_request->is_total_numb_of_rec_requested( ).
+         io_response->set_total_number_of_records( lv_total_count ).
+       ENDIF.
+       io_response->set_data( lt_employee_data_flat ).
+    ENDMETHOD.
+
+
+    METHOD calculate_duration.
+        DATA: lv_years  TYPE i,
+              lv_months TYPE i,
+              lv_days   TYPE i.
+        DATA: lv_current_date TYPE datum.
+        DATA: lv_prev_month_date TYPE datum.
+        DATA: lv_days_in_prev_month TYPE i.
+
+        IF iv_start_date IS INITIAL.
+          RETURN.
+        ENDIF.
+        TRY.
+            lv_current_date = cl_abap_context_info=>get_system_date( ).
+          CATCH cx_root.
+            lv_current_date = sy-datum.
+        ENDTRY.
+
+        IF iv_start_date > lv_current_date.
+          rv_duration = '0 Years 0 Months 0 Days'.
+          RETURN.
+        ENDIF.
+
+        lv_years  = lv_current_date(4)   - iv_start_date(4).
+        lv_months = lv_current_date+4(2) - iv_start_date+4(2).
+        lv_days   = lv_current_date+6(2) - iv_start_date+6(2).
+
+        IF lv_days < 0.
+          lv_months = lv_months - 1.
+          lv_prev_month_date = lv_current_date.
+          lv_prev_month_date+6(2) = '01'.
+          lv_prev_month_date = lv_prev_month_date - 1.
+
+          lv_days_in_prev_month = lv_prev_month_date+6(2).
+          lv_days = lv_days + lv_days_in_prev_month.
+
+
+          IF lv_days < 0.
+            lv_months = lv_months - 1.
+            lv_prev_month_date+6(2) = '01'.
+            lv_prev_month_date = lv_prev_month_date - 1.
+            lv_days_in_prev_month = lv_prev_month_date+6(2).
+            lv_days = lv_days + lv_days_in_prev_month.
+          ENDIF.
+        ENDIF.
+        IF lv_months < 0.
+          lv_years = lv_years - 1.
+          lv_months = lv_months + 12.
+        ENDIF.
+
+        rv_duration = |{ lv_years } Years { lv_months } Months { lv_days } Days|.
+      ENDMETHOD.
+
+
+  METHOD get_background_batch.
+    CONSTANTS lc_page_size TYPE i VALUE 1000.
+
+    DATA: lo_req_languages   TYPE REF TO /iwbep/if_cp_request_read_list,
+          lo_req_mobility    TYPE REF TO /iwbep/if_cp_request_read_list,
+          lo_req_regions     TYPE REF TO /iwbep/if_cp_request_read_list,
+          lo_req_performance TYPE REF TO /iwbep/if_cp_request_read_list,
+          lo_req_potential   TYPE REF TO /iwbep/if_cp_request_read_list,
+          lo_req_roles       TYPE REF TO /iwbep/if_cp_request_read_list.
+
+    DATA: lt_languages   TYPE tt_background_languages,
+          lt_mobility    TYPE tt_background_mobility,
+          lt_regions     TYPE tt_background_regions,
+          lt_performance TYPE tt_trend_performance,
+          lt_potential   TYPE tt_trend_potential,
+          lt_roles       TYPE tt_background_key_roles.
+
+    CLEAR: et_languages, et_mobility, et_regions, et_performance, et_potential, et_roles.
+
+    lo_req_languages = io_client_proxy->create_resource_for_entity_set( 'BACKGROUND_LANGUAGES' )->create_request_for_read( ).
+    lo_req_languages->set_filter( lo_req_languages->create_filter_factory( )->create_by_range( iv_property_path = 'USER_ID' it_range = it_user_range ) ).
+    lo_req_languages->set_select_properties( VALUE #( ( `USER_ID` ) ( `LANGUAGE` ) ( `FLUENCY` ) ) ).
+    lo_req_languages->set_top( lc_page_size )->set_skip( 0 ).
+
+    lo_req_mobility = io_client_proxy->create_resource_for_entity_set( 'BACKGROUND_MOBILITY' )->create_request_for_read( ).
+    lo_req_mobility->set_filter( lo_req_mobility->create_filter_factory( )->create_by_range( iv_property_path = 'USER_ID' it_range = it_user_range ) ).
+    lo_req_mobility->set_select_properties( VALUE #( ( `USER_ID` ) ( `WILLINGNESS` ) ( `TIMINGQUARTER` ) ( `TIMINGYEAR` ) ( `COMMENTS` ) ) ).
+    lo_req_mobility->set_top( lc_page_size )->set_skip( 0 ).
+
+    lo_req_regions = io_client_proxy->create_resource_for_entity_set( 'BACKGROUND_MOB_REGIONS' )->create_request_for_read( ).
+    lo_req_regions->set_filter( lo_req_regions->create_filter_factory( )->create_by_range( iv_property_path = 'USER_ID' it_range = it_user_range ) ).
+    lo_req_regions->set_select_properties( VALUE #( ( `USER_ID` ) ( `REGION_LIST` ) ) ).
+    lo_req_regions->set_top( lc_page_size )->set_skip( 0 ).
+
+    lo_req_performance = io_client_proxy->create_resource_for_entity_set( 'BACKGROUND_BGBWPERFORMANCE' )->create_request_for_read( ).
+    lo_req_performance->set_filter( lo_req_performance->create_filter_factory( )->create_by_range( iv_property_path = 'USER_ID' it_range = it_user_range ) ).
+    lo_req_performance->set_select_properties( VALUE #( ( `USER_ID` ) ( `RATINGS` ) ( `STARTDATE` ) ) ).
+    lo_req_performance->set_top( lc_page_size )->set_skip( 0 ).
+
+    lo_req_potential = io_client_proxy->create_resource_for_entity_set( 'CUST_POTENTIAL_RATING' )->create_request_for_read( ).
+    lo_req_potential->set_filter( lo_req_potential->create_filter_factory( )->create_by_range( iv_property_path = 'EXTERNAL_CODE' it_range = it_user_range ) ).
+    lo_req_potential->set_select_properties( VALUE #( ( `EXTERNAL_CODE` ) ( `CUST_POTENTIAL_RATING` ) ) ).
+    lo_req_potential->set_top( lc_page_size )->set_skip( 0 ).
+
+    lo_req_roles = io_client_proxy->create_resource_for_entity_set( 'BACKGROUND_SUGGESTED_NEXT' )->create_request_for_read( ).
+    lo_req_roles->set_filter( lo_req_roles->create_filter_factory( )->create_by_range( iv_property_path = 'USER_ID' it_range = it_user_range ) ).
+    lo_req_roles->set_select_properties( VALUE #( ( `USER_ID` ) ( `TITLE` ) ) ).
+    lo_req_roles->set_top( lc_page_size )->set_skip( 0 ).
+
+    DATA(lo_batch_request) = io_client_proxy->create_request_for_batch( ).
+    lo_batch_request->add_request( lo_req_languages ).
+    lo_batch_request->add_request( lo_req_mobility ).
+    lo_batch_request->add_request( lo_req_regions ).
+    lo_batch_request->add_request( lo_req_performance ).
+    lo_batch_request->add_request( lo_req_potential ).
+    lo_batch_request->add_request( lo_req_roles ).
+
+    lo_batch_request->execute( ).
+
+    lo_req_languages->get_response( )->get_business_data( IMPORTING et_business_data = lt_languages ).
+    lo_req_mobility->get_response( )->get_business_data( IMPORTING et_business_data = lt_mobility ).
+    lo_req_regions->get_response( )->get_business_data( IMPORTING et_business_data = lt_regions ).
+    lo_req_performance->get_response( )->get_business_data( IMPORTING et_business_data = lt_performance ).
+    lo_req_potential->get_response( )->get_business_data( IMPORTING et_business_data = lt_potential ).
+    lo_req_roles->get_response( )->get_business_data( IMPORTING et_business_data = lt_roles ).
+
+    IF lines( lt_languages ) >= lc_page_size.
+      DATA lt_languages_full TYPE tt_background_languages.
+      get_languages_bulk( EXPORTING io_client_proxy = io_client_proxy it_user_range = it_user_range IMPORTING et_languages = lt_languages_full ).
+      IF lt_languages_full IS NOT INITIAL.
+        lt_languages = lt_languages_full.
+      ENDIF.
+    ENDIF.
+    IF lines( lt_mobility ) >= lc_page_size.
+      DATA lt_mobility_full TYPE tt_background_mobility.
+      get_mobility_bulk( EXPORTING io_client_proxy = io_client_proxy it_user_range = it_user_range IMPORTING et_mobility = lt_mobility_full ).
+      IF lt_mobility_full IS NOT INITIAL.
+        lt_mobility = lt_mobility_full.
+      ENDIF.
+    ENDIF.
+    IF lines( lt_regions ) >= lc_page_size.
+      DATA lt_regions_full TYPE tt_background_regions.
+      get_regions_bulk( EXPORTING io_client_proxy = io_client_proxy it_user_range = it_user_range IMPORTING et_regions = lt_regions_full ).
+      IF lt_regions_full IS NOT INITIAL.
+        lt_regions = lt_regions_full.
+      ENDIF.
+    ENDIF.
+    IF lines( lt_performance ) >= lc_page_size.
+      DATA lt_performance_full TYPE tt_trend_performance.
+      get_performance_bulk( EXPORTING io_client_proxy = io_client_proxy it_user_range = it_user_range IMPORTING et_performance = lt_performance_full ).
+      IF lt_performance_full IS NOT INITIAL.
+        lt_performance = lt_performance_full.
+      ENDIF.
+    ENDIF.
+    IF lines( lt_potential ) >= lc_page_size.
+      DATA lt_potential_full TYPE tt_trend_potential.
+      get_potential_bulk( EXPORTING io_client_proxy = io_client_proxy it_user_range = it_user_range IMPORTING et_potential = lt_potential_full ).
+      IF lt_potential_full IS NOT INITIAL.
+        lt_potential = lt_potential_full.
+      ENDIF.
+    ENDIF.
+    IF lines( lt_roles ) >= lc_page_size.
+      DATA lt_roles_full TYPE tt_background_key_roles.
+      get_key_roles_bulk( EXPORTING io_client_proxy = io_client_proxy it_user_range = it_user_range IMPORTING et_roles = lt_roles_full ).
+      IF lt_roles_full IS NOT INITIAL.
+        lt_roles = lt_roles_full.
+      ENDIF.
+    ENDIF.
+
+    et_languages   = lt_languages.
+    et_mobility    = lt_mobility.
+    et_regions     = lt_regions.
+    et_performance = lt_performance.
+    et_potential   = lt_potential.
+    et_roles       = lt_roles.
+  ENDMETHOD.
+
+
+  METHOD get_languages_bulk.
+    DATA: lo_request TYPE REF TO /iwbep/if_cp_request_read_list,
+          lt_batch   TYPE tt_background_languages,
+          lv_skip    TYPE i VALUE 0.
+    TRY.
+        DO.
+          lo_request = io_client_proxy->create_resource_for_entity_set( 'BACKGROUND_LANGUAGES' )->create_request_for_read( ).
+          DATA(lo_filter_factory) = lo_request->create_filter_factory( ).
+          DATA(lo_filter) = lo_filter_factory->create_by_range( iv_property_path = 'USER_ID' it_range = it_user_range ).
+          lo_request->set_filter( lo_filter ).
+          lo_request->set_select_properties( VALUE #( ( `USER_ID` ) ( `LANGUAGE` ) ( `FLUENCY` ) ) ).
+          lo_request->set_top( 1000 )->set_skip( lv_skip ).
+          lo_request->execute( )->get_business_data( IMPORTING et_business_data = lt_batch ).
+          APPEND LINES OF lt_batch TO et_languages.
+          IF lines( lt_batch ) < 1000. EXIT. ENDIF.
+          lv_skip = lv_skip + 1000.
+        ENDDO.
+      CATCH cx_root ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD get_mobility_bulk.
+    DATA: lo_request TYPE REF TO /iwbep/if_cp_request_read_list,
+          lt_batch   TYPE tt_background_mobility,
+          lv_skip    TYPE i VALUE 0.
+    TRY.
+        DO.
+          lo_request = io_client_proxy->create_resource_for_entity_set( 'BACKGROUND_MOBILITY' )->create_request_for_read( ).
+          DATA(lo_filter_factory) = lo_request->create_filter_factory( ).
+          DATA(lo_filter) = lo_filter_factory->create_by_range( iv_property_path = 'USER_ID' it_range = it_user_range ).
+          lo_request->set_filter( lo_filter ).
+          lo_request->set_select_properties( VALUE #( ( `USER_ID` ) ( `WILLINGNESS` ) ( `TIMINGQUARTER` ) ( `TIMINGYEAR` ) ( `COMMENTS` ) ) ).
+          lo_request->set_top( 1000 )->set_skip( lv_skip ).
+          lo_request->execute( )->get_business_data( IMPORTING et_business_data = lt_batch ).
+          APPEND LINES OF lt_batch TO et_mobility.
+          IF lines( lt_batch ) < 1000. EXIT. ENDIF.
+          lv_skip = lv_skip + 1000.
+        ENDDO.
+      CATCH cx_root ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD get_performance_bulk.
+    DATA: lo_request TYPE REF TO /iwbep/if_cp_request_read_list,
+          lt_batch   TYPE tt_trend_performance,
+          lv_skip    TYPE i VALUE 0.
+    TRY.
+        DO.
+          lo_request = io_client_proxy->create_resource_for_entity_set( 'BACKGROUND_BGBWPERFORMANCE' )->create_request_for_read( ).
+          DATA(lo_filter_factory) = lo_request->create_filter_factory( ).
+          DATA(lo_filter) = lo_filter_factory->create_by_range( iv_property_path = 'USER_ID' it_range = it_user_range ).
+          lo_request->set_filter( lo_filter ).
+          lo_request->set_select_properties( VALUE #( ( `USER_ID` ) ( `RATINGS` ) ( `STARTDATE` ) ) ).
+          lo_request->set_top( 1000 )->set_skip( lv_skip ).
+          lo_request->execute( )->get_business_data( IMPORTING et_business_data = lt_batch ).
+          APPEND LINES OF lt_batch TO et_performance.
+          IF lines( lt_batch ) < 1000. EXIT. ENDIF.
+          lv_skip = lv_skip + 1000.
+        ENDDO.
+      CATCH cx_root ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+METHOD get_picklist.
+    CONSTANTS lc_top TYPE i VALUE 500.
+
+    DATA lo_read_list_request TYPE REF TO /iwbep/if_cp_request_read_list.
+    DATA lt_page_data         TYPE tt_pick_list_value.
+    DATA lv_skip              TYPE i VALUE 0.
+    DATA lv_count             TYPE i.
+
+    DATA lt_status_range TYPE RANGE OF zcsrmodel=>tys_pick_list_value_v_2_2-status.
+    DATA lt_id_range     TYPE RANGE OF zcsrmodel=>tys_pick_list_value_v_2_2-pick_list_v_2_id.
+
+    TRY.
+        lt_status_range = VALUE #( ( sign = 'I' option = 'EQ' low = 'A' ) ).
+
+        lt_id_range = VALUE #(
+           ( sign = 'I' option = 'EQ' low = 'employee-status' )
+           ( sign = 'I' option = 'EQ' low = 'ISOCountryList' )
+           ( sign = 'I' option = 'EQ' low = 'language' )
+           ( sign = 'I' option = 'EQ' low = 'fluency~%1' )
+           ( sign = 'I' option = 'EQ' low = 'cust_division' )
+           ( sign = 'I' option = 'EQ' low = 'riskOfLoss' )
+           ( sign = 'I' option = 'EQ' low = 'potRating' )
+           ( sign = 'I' option = 'EQ' low = 'IDP_Willingness_to_Relocate' )
+           ( sign = 'I' option = 'EQ' low = 'IDP_Relocation_Timeline' )
+           ( sign = 'I' option = 'EQ' low = 'NextRoles' )
+           ( sign = 'I' option = 'EQ' low = 'EmployeeClass' )
+           ( sign = 'I' option = 'EQ' low = 'CP_Category' )
+           ( sign = 'I' option = 'EQ' low = 'yesNo' )
+           ( sign = 'I' option = 'EQ' low = 'reloyears' )
+           ( sign = 'I' option = 'EQ' low = 'CP_Reporting_Org' )
+
+        ).
+        lo_read_list_request = io_client_proxy->create_resource_for_entity_set( 'PICK_LIST_VALUE_V_2' )->create_request_for_read( ).
+        DATA(lo_factory_cnt) = lo_read_list_request->create_filter_factory( ).
+        DATA(lo_node_cnt) = lo_factory_cnt->create_by_range( iv_property_path = 'STATUS' it_range = lt_status_range )->and(
+                            lo_factory_cnt->create_by_range( iv_property_path = 'PICK_LIST_V_2_ID' it_range = lt_id_range ) ).
+        lo_read_list_request->set_filter( lo_node_cnt ).
+        lv_count = lo_read_list_request->request_count( )->request_no_business_data( )->execute( )->get_count( ).
+        CLEAR mt_picklist.
+
+        WHILE lv_count > 0.
+            FINAL(lo_req_page) = io_client_proxy->create_resource_for_entity_set( 'PICK_LIST_VALUE_V_2' )->create_request_for_read( ).
+            DATA(lo_factory) = lo_req_page->create_filter_factory( ).
+            DATA(lo_node) = lo_factory->create_by_range( iv_property_path = 'STATUS' it_range = lt_status_range )->and(
+                            lo_factory->create_by_range( iv_property_path = 'PICK_LIST_V_2_ID' it_range = lt_id_range ) ).
+
+            lo_req_page->set_filter( lo_node ).
+            lo_req_page->set_top( lc_top )->set_skip( lv_skip ).
+
+            lo_req_page->set_select_properties( VALUE #( ( `LABEL_EN_US` ) ( `PICK_LIST_V_2_ID` ) ( `OPTION_ID` ) ( `EXTERNAL_CODE` ) ( `STATUS` ) ) ).
+            lo_req_page->set_orderby( VALUE #( ( property_path = 'PICK_LIST_V_2_ID' ) ) ).
+
+            lo_req_page->execute( )->get_business_data( IMPORTING et_business_data = lt_page_data ).
+
+            APPEND LINES OF lt_page_data TO mt_picklist.
+
+            lv_count -= lc_top.
+            lv_skip += lc_top.
+        ENDWHILE.
+
+      CATCH cx_root INTO DATA(lx_err).
+        mv_debug_error = lx_err->get_text( ).
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD get_potential_bulk.
+    DATA: lo_request TYPE REF TO /iwbep/if_cp_request_read_list,
+          lt_batch   TYPE tt_trend_potential,
+          lv_skip    TYPE i VALUE 0.
+    TRY.
+        DO.
+          lo_request = io_client_proxy->create_resource_for_entity_set( 'CUST_POTENTIAL_RATING' )->create_request_for_read( ).
+          DATA(lo_filter_factory) = lo_request->create_filter_factory( ).
+          DATA(lo_filter) = lo_filter_factory->create_by_range( iv_property_path = 'EXTERNAL_CODE' it_range = it_user_range ).
+          lo_request->set_filter( lo_filter ).
+          lo_request->set_select_properties( VALUE #( ( `EXTERNAL_CODE` ) ( `CUST_POTENTIAL_RATING` ) ) ).
+          lo_request->set_top( 1000 )->set_skip( lv_skip ).
+          lo_request->execute( )->get_business_data( IMPORTING et_business_data = lt_batch ).
+          APPEND LINES OF lt_batch TO et_potential.
+          IF lines( lt_batch ) < 1000. EXIT. ENDIF.
+          lv_skip = lv_skip + 1000.
+        ENDDO.
+      CATCH cx_root ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD get_regions_bulk.
+    DATA: lo_request TYPE REF TO /iwbep/if_cp_request_read_list,
+          lt_batch   TYPE tt_background_regions,
+          lv_skip    TYPE i VALUE 0.
+    TRY.
+        DO.
+          lo_request = io_client_proxy->create_resource_for_entity_set( 'BACKGROUND_MOB_REGIONS' )->create_request_for_read( ).
+          DATA(lo_filter_factory) = lo_request->create_filter_factory( ).
+          DATA(lo_filter) = lo_filter_factory->create_by_range( iv_property_path = 'USER_ID' it_range = it_user_range ).
+          lo_request->set_filter( lo_filter ).
+          lo_request->set_select_properties( VALUE #( ( `USER_ID` ) ( `REGION_LIST` ) ) ).
+          lo_request->set_top( 1000 )->set_skip( lv_skip ).
+          lo_request->execute( )->get_business_data( IMPORTING et_business_data = lt_batch ).
+          APPEND LINES OF lt_batch TO et_regions.
+          IF lines( lt_batch ) < 1000. EXIT. ENDIF.
+          lv_skip = lv_skip + 1000.
+        ENDDO.
+      CATCH cx_root ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+METHOD get_users_by_gender.
+    TYPES: BEGIN OF ty_per_personal_short,
+             person_id_external TYPE zcsrmodel=>tys_emp_job_2-user_id,
+           END OF ty_per_personal_short.
+    DATA: lt_results TYPE TABLE OF ty_per_personal_short.
+    DATA: lo_request TYPE REF TO /iwbep/if_cp_request_read_list.
+    DATA: lv_skip TYPE i VALUE 0.
+    DO.
+      TRY.
+        lo_request = io_client_proxy->create_resource_for_entity_set( 'PER_PERSONAL' )->create_request_for_read( ).
+        DATA(lo_filter_factory) = lo_request->create_filter_factory( ).
+        DATA(lo_filter) = lo_filter_factory->create_by_range( iv_property_path = 'GENDER' it_range = it_range_gender ).
+        lo_request->set_filter( lo_filter ).
+        lo_request->set_select_properties( VALUE #( ( `PERSON_ID_EXTERNAL` ) ) ).
+        lo_request->set_top( 1000 )->set_skip( lv_skip ).
+        lo_request->execute( )->get_business_data( IMPORTING et_business_data = lt_results ).
+        LOOP AT lt_results INTO DATA(ls_res).
+             IF ls_res-person_id_external NA '_'.
+                APPEND VALUE #( sign = 'I' option = 'EQ' low = ls_res-person_id_external ) TO et_user_ids.
+             ENDIF.
+        ENDLOOP.
+        IF lines( lt_results ) < 1000.
+            EXIT.
+        ENDIF.
+        lv_skip = lv_skip + 1000.
+
+      CATCH cx_root.
+        EXIT.
+      ENDTRY.
+    ENDDO.
+  ENDMETHOD.
+
+
+METHOD get_users_by_potential.
+    TYPES: BEGIN OF ty_potential_short,
+             external_code TYPE zcsrmodel=>tys_emp_job_2-user_id,
+           END OF ty_potential_short.
+    DATA: lt_results TYPE TABLE OF ty_potential_short.
+    DATA: lo_request TYPE REF TO /iwbep/if_cp_request_read_list.
+    DATA: lv_skip TYPE i VALUE 0.
+
+    DO.
+      TRY.
+        lo_request = io_client_proxy->create_resource_for_entity_set( 'CUST_POTENTIAL_RATING' )->create_request_for_read( ).
+        DATA(lo_filter_factory) = lo_request->create_filter_factory( ).
+        DATA(lo_filter) = lo_filter_factory->create_by_range( iv_property_path = 'CUST_POTENTIAL_RATING' it_range = it_range_potential ).
+
+        lo_request->set_filter( lo_filter ).
+        lo_request->set_select_properties( VALUE #( ( `EXTERNAL_CODE` ) ) ).
+        lo_request->set_top( 1000 )->set_skip( lv_skip ).
+
+        lo_request->execute( )->get_business_data( IMPORTING et_business_data = lt_results ).
+
+        LOOP AT lt_results INTO DATA(ls_res).
+             IF ls_res-external_code NA '_'.
+                APPEND VALUE #( sign = 'I' option = 'EQ' low = ls_res-external_code ) TO et_user_ids.
+             ENDIF.
+        ENDLOOP.
+
+        IF lines( lt_results ) < 1000.
+            EXIT.
+        ENDIF.
+        lv_skip = lv_skip + 1000.
+
+      CATCH cx_root ##NO_HANDLER.
+        EXIT.
+      ENDTRY.
+    ENDDO.
+  ENDMETHOD.
+ENDCLASS.
