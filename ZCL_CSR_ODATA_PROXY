@@ -1,0 +1,56 @@
+CLASS zcl_csr_odata_proxy DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC.
+
+  PUBLIC SECTION.
+    "! <p class="shorttext synchronized">get ODATA client proxy object</p>
+    "!
+    "! @parameter ro_client_proxy | <p class="shorttext synchronized">Client proxy object</p>
+    "!
+    "! @raising cx_root | <p class="shorttext synchronized">Generic Root Exception</p>
+    METHODS get_odatav2_client_proxy
+      RETURNING
+        VALUE(ro_client_proxy) TYPE REF TO /iwbep/if_cp_client_proxy
+      RAISING
+        cx_root.
+ENDCLASS.
+
+
+
+CLASS ZCL_CSR_ODATA_PROXY IMPLEMENTATION.
+
+
+  METHOD get_odatav2_client_proxy.
+    DATA lo_http_client TYPE REF TO if_web_http_client.
+
+    " 1. Get the destination of remote system
+    TRY.
+        DATA(lo_destination) = cl_http_destination_provider=>create_by_comm_arrangement(
+                                                    comm_scenario  = 'ZCS_SUCCESSFACTORS'
+                                                    comm_system_id = 'ZCS_SUCCESSFACTORS'
+                                                    ).
+      CATCH cx_http_dest_provider_error INTO DATA(lref_dest_provider_error) ##NO_HANDLER.
+    ENDTRY.
+
+    TRY.
+        lo_http_client = cl_web_http_client_manager=>create_by_http_destination( lo_destination ).
+        lo_http_client->get_http_request( )->set_header_field( i_name = 'successfactors-companyid' i_value = 'ColgateQA' ).
+
+        ASSERT lo_http_client IS BOUND.
+      CATCH cx_web_http_client_error INTO DATA(lref_http_client_err) ##NO_HANDLER.
+    ENDTRY.
+
+    TRY.
+        "Create ODATA V2 remote proxy
+        ro_client_proxy = /iwbep/cl_cp_factory_remote=>create_v2_remote_proxy(
+                              is_proxy_model_key       = VALUE #( repository_id       = 'DEFAULT'
+                                                                  proxy_model_id      = 'ZCSRMODEL'
+                                                                  proxy_model_version = '0001' )
+                              io_http_client           = lo_http_client
+                              iv_relative_service_root = '/odata/v2' ).
+      CATCH /iwbep/cx_gateway INTO DATA(lo_ex_gateway) ##NO_HANDLER.
+      CATCH cx_web_http_client_error INTO DATA(lo_ex_http_client_err2) ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+ENDCLASS.
